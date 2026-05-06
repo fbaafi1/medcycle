@@ -54,7 +54,7 @@ export default function Lightbox({ src, alt, children }: LightboxProps) {
             src={src}
             alt={alt}
             onClick={(e) => e.stopPropagation()}
-            className="absolute inset-0 m-auto max-w-[90vw] max-h-[90vh] w-fit h-fit object-contain rounded-lg shadow-2xl"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl z-[101]"
           />
         </div>
       )}
