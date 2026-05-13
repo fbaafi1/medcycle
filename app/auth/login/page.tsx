@@ -40,7 +40,7 @@ function LoginContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-text">Welcome back</h1>
-          <p className="text-sm text-text-secondary mt-1">Sign in to your MedCycle account</p>
+          <p className="text-sm text-text-secondary mt-1">Sign in to your account on The MedCycle</p>
         </div>
 
         {/* Form */}
@@ -60,7 +60,6 @@ function LoginContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="you@hospital.org"
               />
             </div>
             <div>
@@ -71,7 +70,6 @@ function LoginContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="••••••••"
               />
             </div>
           </div>

@@ -23,6 +23,7 @@ export interface Listing {
   image_url: string | null;
   category: ListingCategory;
   status: ListingStatus;
+  is_approved: boolean;
   // Medication-specific
   generic_name: string | null;
   trade_name: string | null;

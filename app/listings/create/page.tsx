@@ -149,9 +149,9 @@ export default function CreateListingPage() {
             <label className="block text-sm font-medium text-text mb-2">Category *</label>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { value: 'medication', label: '💊 Medication', color: 'blue' },
-                { value: 'equipment', label: '🏥 Equipment', color: 'emerald' },
-                { value: 'supply', label: '📦 Supply', color: 'violet' },
+                { value: 'medication', label: 'Medication', color: 'blue' },
+                { value: 'equipment', label: 'Equipment', color: 'emerald' },
+                { value: 'supply', label: 'Supply', color: 'violet' },
               ] as const).map((cat) => (
                 <button
                   key={cat.value}
@@ -221,7 +221,7 @@ export default function CreateListingPage() {
           {/* Dynamic category fields */}
           {category === 'medication' && (
             <div className="space-y-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-              <h3 className="text-sm font-semibold text-blue-900 flex items-center gap-1">💊 Medication Details</h3>
+              <h3 className="text-sm font-semibold text-blue-900 flex items-center gap-1">Medication Details</h3>
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Generic Name</label>
                 <input
@@ -256,7 +256,7 @@ export default function CreateListingPage() {
 
           {category === 'equipment' && (
             <div className="space-y-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-              <h3 className="text-sm font-semibold text-emerald-900 flex items-center gap-1">🏥 Equipment Details</h3>
+              <h3 className="text-sm font-semibold text-emerald-900 flex items-center gap-1">Equipment Details</h3>
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Condition *</label>
                 <select
@@ -274,7 +274,7 @@ export default function CreateListingPage() {
 
           {category === 'supply' && (
             <div className="space-y-4 p-4 bg-violet-50/50 rounded-xl border border-violet-100">
-              <h3 className="text-sm font-semibold text-violet-900 flex items-center gap-1">📦 Supply Details</h3>
+              <h3 className="text-sm font-semibold text-violet-900 flex items-center gap-1">Supply Details</h3>
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Quantity *</label>
                 <input

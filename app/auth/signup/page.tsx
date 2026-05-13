@@ -83,7 +83,7 @@ function SignupContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-text">Create your account</h1>
-          <p className="text-sm text-text-secondary mt-1">Join MedCycle and start sharing resources</p>
+          <p className="text-sm text-text-secondary mt-1">Join The MedCycle and start sharing resources</p>
         </div>
 
         {/* Form */}
@@ -109,7 +109,6 @@ function SignupContent() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                  placeholder="you@hospital.org"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -121,7 +120,6 @@ function SignupContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    placeholder="At least 6 characters"
                   />
                 </div>
                 <div>
@@ -132,7 +130,6 @@ function SignupContent() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    placeholder="Repeat password"
                   />
                 </div>
               </div>
@@ -157,7 +154,6 @@ function SignupContent() {
                   onChange={(e) => setOrgName(e.target.value)}
                   required
                   className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                  placeholder="e.g., Korle Bu Teaching Hospital"
                 />
               </div>
               <div>
@@ -168,7 +164,6 @@ function SignupContent() {
                   onChange={(e) => setContactPerson(e.target.value)}
                   required
                   className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                  placeholder="e.g., Dr. Kwame Asante"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -180,7 +175,6 @@ function SignupContent() {
                     onChange={(e) => setPhone(e.target.value)}
                     required
                     className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    placeholder="e.g., +233 24 123 4567"
                   />
                 </div>
                 <div>
@@ -191,7 +185,6 @@ function SignupContent() {
                     onChange={(e) => setLocation(e.target.value)}
                     required
                     className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    placeholder="e.g., Accra, Ghana"
                   />
                 </div>
               </div>

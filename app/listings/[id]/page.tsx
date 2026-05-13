@@ -8,11 +8,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Lightbox from '@/components/Lightbox';
 
-const categoryIcons: Record<string, string> = {
-  medication: '💊',
-  equipment: '🏥',
-  supply: '📦',
-};
 
 export default function ListingDetailPage() {
   const { id } = useParams();
@@ -62,7 +57,9 @@ export default function ListingDetailPage() {
   if (!listing) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <span className="text-5xl block mb-4">😕</span>
+        <svg className="w-12 h-12 text-primary/30 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
         <h2 className="text-xl font-bold text-text mb-2">Listing not found</h2>
         <p className="text-sm text-text-secondary mb-6">This listing may have been removed.</p>
         <Link href="/" className="text-primary font-medium hover:underline">← Back to listings</Link>
@@ -85,6 +82,21 @@ export default function ListingDetailPage() {
         Back to listings
       </Link>
 
+      {/* Pending approval banner */}
+      {!listing.is_approved && (
+        <div className="mb-6 flex items-start gap-3 px-4 py-3.5 bg-amber-50 border border-amber-200 rounded-xl text-sm animate-fade-in">
+          <svg className="w-5 h-5 mt-0.5 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-amber-800 font-semibold">Pending Admin Approval</p>
+            <p className="text-amber-700/80 text-xs mt-0.5">
+              This listing is not yet visible on the platform. An admin will review and approve it shortly.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-3">
@@ -95,9 +107,11 @@ export default function ListingDetailPage() {
                 <img src={listing.image_url} alt={listing.title} className="w-full h-64 sm:h-80 object-cover hover:opacity-90 transition-opacity" />
               </Lightbox>
             ) : (
-              <div className="w-full h-64 sm:h-80 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center">
-                <span className="text-7xl">{categoryIcons[listing.category] || '📋'}</span>
-              </div>
+              <div className="w-full h-full flex items-center justify-center">
+              <svg className="w-16 h-16 text-primary/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
             )}
           </div>
 
@@ -110,7 +124,7 @@ export default function ListingDetailPage() {
                 {isAvailable ? 'Available' : 'Taken'}
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/5 text-primary rounded-full text-xs font-semibold">
-                {categoryIcons[listing.category]} {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
+                {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
               </span>
             </div>
 
@@ -121,7 +135,7 @@ export default function ListingDetailPage() {
             <div className="space-y-3">
               {listing.category === 'medication' && (
                 <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-3">💊 Medication Details</h3>
+                  <h3 className="text-sm font-semibold text-blue-900 mb-3">Medication Details</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     {listing.generic_name && (
                       <div>
@@ -147,7 +161,7 @@ export default function ListingDetailPage() {
 
               {listing.category === 'equipment' && listing.condition && (
                 <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                  <h3 className="text-sm font-semibold text-emerald-900 mb-2">🏥 Equipment Details</h3>
+                  <h3 className="text-sm font-semibold text-emerald-900 mb-2">Equipment Details</h3>
                   <p className="text-sm">
                     <span className="text-text-secondary">Condition:</span>
                     <span className="ml-2 font-medium text-text capitalize">{listing.condition.replace('_', ' ')}</span>
@@ -157,7 +171,7 @@ export default function ListingDetailPage() {
 
               {listing.category === 'supply' && listing.quantity && (
                 <div className="p-4 bg-violet-50/50 rounded-xl border border-violet-100">
-                  <h3 className="text-sm font-semibold text-violet-900 mb-2">📦 Supply Details</h3>
+                  <h3 className="text-sm font-semibold text-violet-900 mb-2">Supply Details</h3>
                   <p className="text-sm">
                     <span className="text-text-secondary">Quantity:</span>
                     <span className="ml-2 font-medium text-text">{listing.quantity}</span>
@@ -180,19 +194,25 @@ export default function ListingDetailPage() {
             <h3 className="text-sm font-semibold text-text mb-4">Contact Information</h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-start gap-3">
-                <span className="text-lg">🏛️</span>
+                <svg className="w-5 h-5 text-text-secondary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                </svg>
                 <div>
                   <p className="font-medium text-text">{listing.profiles?.organization_name || 'Unknown Organization'}</p>
                   <p className="text-text-secondary">{listing.profiles?.location || 'No location'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-lg">👤</span>
+                <svg className="w-5 h-5 text-text-secondary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
                 <p className="font-medium text-text">{listing.profiles?.contact_person || 'Unknown Contact'}</p>
               </div>
               {phone && (
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">📞</span>
+                  <svg className="w-5 h-5 text-text-secondary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                  </svg>
                   <p className="font-medium text-text">{listing.profiles?.phone_number}</p>
                 </div>
               )}

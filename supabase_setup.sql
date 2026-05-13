@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
   image_url TEXT,
   category TEXT NOT NULL CHECK (category IN ('medication', 'equipment', 'supply')),
   status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'taken')),
+  is_approved BOOLEAN DEFAULT FALSE,
   -- Medication-specific fields
   generic_name TEXT,
   trade_name TEXT,
@@ -58,6 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_listings_user_id ON public.listings(user_id);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON public.listings(category);
 CREATE INDEX IF NOT EXISTS idx_listings_status ON public.listings(status);
+CREATE INDEX IF NOT EXISTS idx_listings_is_approved ON public.listings(is_approved);
 CREATE INDEX IF NOT EXISTS idx_listings_created_at ON public.listings(created_at DESC);
 
 
@@ -90,10 +92,18 @@ CREATE POLICY "profiles_update_own"
 
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
 
--- Anyone can view all listings
-CREATE POLICY "listings_select_all"
+-- Public can only view APPROVED listings; owners see their own; admins see all
+CREATE POLICY "listings_select_approved"
   ON public.listings FOR SELECT
-  USING (true);
+  USING (
+    is_approved = true
+    OR auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );
 
 -- Authenticated users can create listings (only for themselves)
 CREATE POLICY "listings_insert_own"
@@ -110,6 +120,17 @@ CREATE POLICY "listings_update_own"
 CREATE POLICY "listings_delete_own"
   ON public.listings FOR DELETE
   USING (auth.uid() = user_id);
+
+-- Admins can update ANY listing (for approving)
+CREATE POLICY "listings_update_admin"
+  ON public.listings FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );
 
 -- Admins can delete ANY listing
 CREATE POLICY "listings_delete_admin"

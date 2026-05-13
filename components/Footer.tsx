@@ -32,13 +32,13 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-text mb-3">Important</h3>
             <p className="text-xs text-text-secondary leading-relaxed">
-              MedCycle is a resource-sharing platform. All users must ensure listed items are safe, properly stored, and suitable for use. MedCycle does not handle logistics or payments.
+              The MedCycle is a resource-sharing platform. All users must ensure listed items are safe, properly stored, and suitable for use. The MedCycle does not handle logistics or payments.
             </p>
           </div>
         </div>
 
         <div className="border-t border-border mt-8 pt-6 text-center">
-          <p className="text-xs text-text-secondary">&copy; {new Date().getFullYear()} MedCycle. Healthcare resource exchange platform.</p>
+          <p className="text-xs text-text-secondary">&copy; {new Date().getFullYear()} The MedCycle. Healthcare resource exchange platform.</p>
         </div>
       </div>
     </footer>

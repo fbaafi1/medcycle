@@ -36,6 +36,8 @@ export default function MyListingsPage() {
 
   if (authLoading) return null;
 
+  const pendingCount = listings.filter(l => !l.is_approved).length;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
@@ -54,6 +56,23 @@ export default function MyListingsPage() {
         </Link>
       </div>
 
+      {/* Pending approval notice */}
+      {!loading && pendingCount > 0 && (
+        <div className="mb-6 flex items-start gap-3 px-4 py-3.5 bg-amber-50 border border-amber-200 rounded-xl text-sm animate-fade-in">
+          <svg className="w-5 h-5 mt-0.5 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-amber-800 font-semibold">
+              {pendingCount} listing{pendingCount !== 1 ? 's' : ''} pending approval
+            </p>
+            <p className="text-amber-700/80 text-xs mt-0.5">
+              New listings require admin approval before they appear on the platform. You'll see them go live once reviewed.
+            </p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(3)].map((_, i) => (
@@ -69,7 +88,9 @@ export default function MyListingsPage() {
         </div>
       ) : listings.length === 0 ? (
         <div className="text-center py-20">
-          <span className="text-5xl block mb-4">📋</span>
+          <svg className="w-12 h-12 text-primary/30 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
           <h3 className="text-lg font-semibold text-text mb-2">No listings yet</h3>
           <p className="text-sm text-text-secondary mb-6">Start sharing medical resources with those in need.</p>
           <Link
@@ -91,3 +112,4 @@ export default function MyListingsPage() {
     </div>
   );
 }
+

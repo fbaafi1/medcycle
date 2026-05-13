@@ -1,11 +1,6 @@
 import Link from 'next/link';
 import { Listing } from '@/lib/types';
 
-const categoryIcons: Record<string, string> = {
-  medication: '💊',
-  equipment: '🏥',
-  supply: '📦',
-};
 
 const categoryColors: Record<string, string> = {
   medication: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -15,10 +10,11 @@ const categoryColors: Record<string, string> = {
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const isAvailable = listing.status === 'available';
+  const isPending = listing.is_approved === false;
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className="bg-white rounded-xl border border-border overflow-hidden card-hover group h-[380px] flex flex-col">
+      <div className={`bg-white rounded-xl border overflow-hidden card-hover group h-[380px] flex flex-col ${isPending ? 'border-amber-200' : 'border-border'}`}>
         {/* Image */}
         <div className="relative h-48 bg-gradient-to-br from-primary/5 to-accent/5 overflow-hidden">
           {listing.image_url ? (
@@ -29,11 +25,19 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-5xl">{categoryIcons[listing.category] || '📋'}</span>
+              <svg className="w-12 h-12 text-primary/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
           )}
           {/* Status badge */}
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+            {isPending && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Pending Approval
+              </span>
+            )}
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${isAvailable ? 'badge-available' : 'badge-taken'}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
               {isAvailable ? 'Available' : 'Taken'}
@@ -46,7 +50,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           {/* Category */}
           <div className="mb-2">
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${categoryColors[listing.category]}`}>
-              {categoryIcons[listing.category]} {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
+              {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
             </span>
           </div>
 

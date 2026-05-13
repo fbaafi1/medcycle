@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface LightboxProps {
   src: string;
@@ -10,6 +11,18 @@ interface LightboxProps {
 
 export default function Lightbox({ src, alt, children }: LightboxProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const portalRef = useRef<HTMLDivElement | null>(null);
+
+  // Create a dedicated portal container outside of any transformed ancestors
+  useEffect(() => {
+    const el = document.createElement('div');
+    el.id = 'lightbox-portal';
+    document.body.appendChild(el);
+    portalRef.current = el;
+    return () => {
+      document.body.removeChild(el);
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,17 +47,47 @@ export default function Lightbox({ src, alt, children }: LightboxProps) {
         {children}
       </div>
 
-      {isOpen && (
+      {isOpen && portalRef.current && createPortal(
         <div
-          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
           onClick={() => setIsOpen(false)}
         >
           {/* Close button */}
           <button
             onClick={() => setIsOpen(false)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors z-10"
+            style={{
+              position: 'fixed',
+              top: '16px',
+              right: '16px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10000,
+            }}
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -54,9 +97,16 @@ export default function Lightbox({ src, alt, children }: LightboxProps) {
             src={src}
             alt={alt}
             onClick={(e) => e.stopPropagation()}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl z-[101]"
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '85vh',
+              objectFit: 'contain',
+              borderRadius: '8px',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            }}
           />
-        </div>
+        </div>,
+        portalRef.current
       )}
     </>
   );

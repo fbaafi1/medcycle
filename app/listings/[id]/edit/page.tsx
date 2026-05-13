@@ -145,9 +145,9 @@ export default function EditListingPage() {
             <label className="block text-sm font-medium text-text mb-2">Category *</label>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { value: 'medication', label: '💊 Medication' },
-                { value: 'equipment', label: '🏥 Equipment' },
-                { value: 'supply', label: '📦 Supply' },
+                { value: 'medication', label: 'Medication' },
+                { value: 'equipment', label: 'Equipment' },
+                { value: 'supply', label: 'Supply' },
               ] as const).map((cat) => (
                 <button
                   key={cat.value}
@@ -192,7 +192,7 @@ export default function EditListingPage() {
 
           {category === 'medication' && (
             <div className="space-y-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-              <h3 className="text-sm font-semibold text-blue-900">💊 Medication Details</h3>
+              <h3 className="text-sm font-semibold text-blue-900">Medication Details</h3>
               <input type="text" value={genericName} onChange={(e) => setGenericName(e.target.value)} placeholder="Generic Name"
                 className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               <input type="text" value={tradeName} onChange={(e) => setTradeName(e.target.value)} placeholder="Trade Name"
@@ -204,7 +204,7 @@ export default function EditListingPage() {
 
           {category === 'equipment' && (
             <div className="space-y-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-              <h3 className="text-sm font-semibold text-emerald-900">🏥 Equipment Details</h3>
+              <h3 className="text-sm font-semibold text-emerald-900">Equipment Details</h3>
               <select value={condition} onChange={(e) => setCondition(e.target.value as EquipmentCondition)}
                 className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
                 <option value="new">New</option>
@@ -216,7 +216,7 @@ export default function EditListingPage() {
 
           {category === 'supply' && (
             <div className="space-y-4 p-4 bg-violet-50/50 rounded-xl border border-violet-100">
-              <h3 className="text-sm font-semibold text-violet-900">📦 Supply Details</h3>
+              <h3 className="text-sm font-semibold text-violet-900">Supply Details</h3>
               <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} min="1" placeholder="Quantity"
                 className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
             </div>
