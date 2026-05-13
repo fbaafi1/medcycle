@@ -85,6 +85,17 @@ CREATE POLICY "profiles_update_own"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Admins can update ANY profile (for role assignment)
+CREATE POLICY "profiles_update_admin"
+  ON public.profiles FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );
+
 
 -- ************************************************************
 -- 4. ROW LEVEL SECURITY (RLS) — LISTINGS

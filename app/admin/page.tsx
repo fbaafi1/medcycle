@@ -68,6 +68,27 @@ export default function AdminPage() {
     setListings(listings.filter(l => l.id !== id));
   };
 
+  const toggleAdmin = async (targetUser: Profile) => {
+    // Prevent removing own admin role
+    if (targetUser.user_id === user?.id) {
+      alert('You cannot change your own admin role.');
+      return;
+    }
+    const newStatus = !targetUser.is_admin;
+    const action = newStatus ? 'promote' : 'demote';
+    if (!confirm(`Are you sure you want to ${action} "${targetUser.organization_name || targetUser.contact_person || 'this user'}" ${newStatus ? 'to' : 'from'} admin?`)) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_admin: newStatus })
+      .eq('id', targetUser.id);
+    if (error) {
+      alert('Failed to update role: ' + error.message);
+      return;
+    }
+    setUsers(users.map(u => u.id === targetUser.id ? { ...u, is_admin: newStatus } : u));
+  };
+
   if (authLoading || !profile?.is_admin) return null;
 
   const pendingCount = listings.filter(l => !l.is_approved).length;
@@ -103,7 +124,7 @@ export default function AdminPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
             <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -138,6 +159,15 @@ export default function AdminPage() {
           <div>
             <p className="text-xl font-bold text-text">{users.length}</p>
             <p className="text-xs text-text-secondary">Users</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+            <svg className="w-5 h-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-text">{users.filter(u => u.is_admin).length}</p>
+            <p className="text-xs text-text-secondary">Admins</p>
           </div>
         </div>
       </div>
@@ -323,17 +353,31 @@ export default function AdminPage() {
                   <th className="text-left px-4 py-3 font-semibold text-text-secondary">Contact Person</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-secondary">Phone</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-secondary">Location</th>
+                  <th className="text-left px-4 py-3 font-semibold text-text-secondary">Role</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-secondary">License</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-secondary">Joined</th>
+                  <th className="text-right px-4 py-3 font-semibold text-text-secondary">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-border/50 hover:bg-surface-hover transition-colors">
+                  <tr key={u.id} className={`border-b border-border/50 hover:bg-surface-hover transition-colors ${u.is_admin ? 'bg-rose-50/30' : ''}`}>
                     <td className="px-4 py-3 font-medium text-text">{u.organization_name || '—'}</td>
                     <td className="px-4 py-3 text-text-secondary">{u.contact_person || '—'}</td>
                     <td className="px-4 py-3 text-text-secondary">{u.phone_number || '—'}</td>
                     <td className="px-4 py-3 text-text-secondary">{u.location || '—'}</td>
+                    <td className="px-4 py-3">
+                      {u.is_admin ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                          Admin
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                          User
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       {u.license_url ? (
                         <a href={u.license_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs font-medium">
@@ -344,6 +388,33 @@ export default function AdminPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-text-secondary">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end">
+                        {u.user_id === user?.id ? (
+                          <span className="text-xs text-text-secondary italic">You</span>
+                        ) : u.is_admin ? (
+                          <button
+                            onClick={() => toggleAdmin(u)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                            Remove Admin
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => toggleAdmin(u)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors shadow-sm"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            Make Admin
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
