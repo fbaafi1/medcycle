@@ -6,15 +6,23 @@ import { Listing, ListingCategory } from '@/lib/types';
 import ListingCard from '@/components/ListingCard';
 import Link from 'next/link';
 
+const ITEMS_PER_PAGE = 9;
+
 export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'all'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchListings();
   }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, category]);
 
   const fetchListings = async () => {
     const { data } = await supabase
@@ -38,6 +46,34 @@ export default function HomePage() {
     const notExpired = !l.expiry_date || new Date(l.expiry_date) >= new Date(new Date().toDateString());
     return matchesSearch && matchesCategory && notExpired;
   });
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedListings = filtered.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to the listings section
+    document.getElementById('listings')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Generate page numbers with ellipsis for large page counts
+  const getPageNumbers = (): (number | 'ellipsis')[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | 'ellipsis')[] = [1];
+    if (safePage > 3) pages.push('ellipsis');
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (safePage < totalPages - 2) pages.push('ellipsis');
+    pages.push(totalPages);
+    return pages;
+  };
 
   return (
     <div>
@@ -151,13 +187,74 @@ export default function HomePage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
-            {filtered.map((listing, i) => (
-              <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-                <ListingCard listing={listing} />
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+              {paginatedListings.map((listing, i) => (
+                <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                  <ListingCard listing={listing} />
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Results summary */}
+                <p className="text-sm text-text-secondary order-2 sm:order-1">
+                  Showing <span className="font-semibold text-text">{startIndex + 1}</span>–<span className="font-semibold text-text">{Math.min(endIndex, filtered.length)}</span> of{' '}
+                  <span className="font-semibold text-text">{filtered.length}</span> listings
+                </p>
+
+                {/* Page controls */}
+                <nav className="flex items-center gap-1 order-1 sm:order-2" aria-label="Pagination">
+                  {/* Previous */}
+                  <button
+                    onClick={() => goToPage(safePage - 1)}
+                    disabled={safePage <= 1}
+                    className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-border bg-white text-text-secondary hover:text-primary hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-text-secondary disabled:hover:border-border"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span className="hidden sm:inline">Prev</span>
+                  </button>
+
+                  {/* Page numbers */}
+                  {getPageNumbers().map((page, idx) =>
+                    page === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 py-2 text-sm text-text-secondary select-none">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`min-w-[36px] h-9 px-2 text-sm font-medium rounded-lg transition-all ${
+                          page === safePage
+                            ? 'gradient-primary text-white shadow-md scale-105'
+                            : 'bg-white border border-border text-text-secondary hover:text-primary hover:border-primary/30'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+
+                  {/* Next */}
+                  <button
+                    onClick={() => goToPage(safePage + 1)}
+                    disabled={safePage >= totalPages}
+                    className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-border bg-white text-text-secondary hover:text-primary hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-text-secondary disabled:hover:border-border"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </nav>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </section>
     </div>
