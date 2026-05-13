@@ -6,12 +6,12 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-primary-dark">Med<span className="text-secondary">Cycle</span></span>
+              <img
+                src="/images/logo.svg"
+                alt="The MedCycle Logo"
+                className="w-12 h-12 object-contain drop-shadow-sm"
+              />
+              <span className="text-lg font-bold text-primary-dark">The Med<span className="text-secondary">Cycle</span></span>
             </div>
             <p className="text-sm text-text-secondary leading-relaxed">
               Connecting healthcare providers to share and redistribute medical resources efficiently.
