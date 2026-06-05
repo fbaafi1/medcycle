@@ -7,11 +7,14 @@ import ListingCard from '@/components/ListingCard';
 import Link from 'next/link';
 
 const ITEMS_PER_PAGE = 9;
+const CACHE_KEY = 'medcycle_listings_v1';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -19,26 +22,56 @@ export default function HomePage() {
     fetchListings();
   }, []);
 
+  // Debounce search input — only update filtered results after user stops typing
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(t);
+  }, [search]);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, category]);
+  }, [debouncedSearch, category]);
 
   const fetchListings = async () => {
+    // 1. Show cached data immediately (instant on repeat visits)
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data: cachedData, timestamp } = JSON.parse(cached);
+        if (cachedData?.length) {
+          setListings(cachedData);
+          setLoading(false);
+          // Cache still fresh — skip network entirely
+          if (Date.now() - timestamp < CACHE_TTL) return;
+        }
+      }
+    } catch { /* sessionStorage unavailable — continue to network */ }
+
+    // 2. Fetch fresh data from Supabase (background refresh if cache existed)
     const { data } = await supabase
       .from('listings')
       .select('*, profiles!listings_user_id_profiles_fkey(*)')
       .eq('is_approved', true);
-    // Shuffle randomly
-    const shuffled = (data || []).sort(() => Math.random() - 0.5);
+
+    if (!data) return;
+    const shuffled = data.sort(() => Math.random() - 0.5);
     setListings(shuffled);
     setLoading(false);
+
+    // 3. Persist to cache for next visit
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: shuffled,
+        timestamp: Date.now(),
+      }));
+    } catch { /* storage full or unavailable */ }
   };
 
   const filtered = listings.filter((l) => {
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     const matchesSearch =
-      !search ||
+      !debouncedSearch ||
       l.title.toLowerCase().includes(q) ||
       l.description.toLowerCase().includes(q) ||
       (l.generic_name && l.generic_name.toLowerCase().includes(q)) ||
