@@ -49,23 +49,30 @@ export default function HomePage() {
     } catch { /* sessionStorage unavailable — continue to network */ }
 
     // 2. Fetch fresh data from Supabase (background refresh if cache existed)
-    const { data } = await supabase
-      .from('listings')
-      .select('*, profiles!listings_user_id_profiles_fkey(*)')
-      .eq('is_approved', true);
-
-    if (!data) return;
-    const shuffled = data.sort(() => Math.random() - 0.5);
-    setListings(shuffled);
-    setLoading(false);
-
-    // 3. Persist to cache for next visit
     try {
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-        data: shuffled,
-        timestamp: Date.now(),
-      }));
-    } catch { /* storage full or unavailable */ }
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*, profiles!listings_user_id_profiles_fkey(*)')
+        .eq('is_approved', true);
+
+      if (error) throw error;
+      const shuffled = (data || []).sort(() => Math.random() - 0.5);
+      setListings(shuffled);
+
+      // 3. Persist to cache for next visit
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: shuffled,
+          timestamp: Date.now(),
+        }));
+      } catch { /* storage full or unavailable */ }
+    } catch (err) {
+      console.error('Failed to fetch listings:', err);
+      // Don't overwrite cached data on network error
+    } finally {
+      // Always clear the spinner — never leave user staring at skeletons
+      setLoading(false);
+    }
   };
 
   const filtered = listings.filter((l) => {
