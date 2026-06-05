@@ -109,7 +109,7 @@ export default function ListingDetailPage() {
 
   const toggleStatus = async () => {
     if (!listing) return;
-    const newStatus = listing.status === 'available' ? 'taken' : 'available';
+    const newStatus = (listing.status === 'available' ? 'taken' : 'available') as import('@/lib/types').ListingStatus;
     await supabase.from('listings').update({ status: newStatus }).eq('id', listing.id);
     const updated = { ...listing, status: newStatus };
     setListing(updated);
