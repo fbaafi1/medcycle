@@ -17,6 +17,10 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 
+const LISTING_CACHE_PREFIX = 'medcycle_listing_';
+const HOME_CACHE_KEY = 'medcycle_listings_v1';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export default function ListingDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -33,13 +37,51 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     const fetchListing = async () => {
+      const cacheKey = `${LISTING_CACHE_PREFIX}${id}`;
+
+      // 1. Try per-listing cache first
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data: cachedData, timestamp } = JSON.parse(cached);
+          if (cachedData) {
+            setListing(cachedData);
+            setLoading(false);
+            if (Date.now() - timestamp < CACHE_TTL) return;
+          }
+        }
+      } catch {}
+
+      // 2. Fall back to homepage listings cache (user clicked from homepage — data already available)
+      try {
+        const homeCache = sessionStorage.getItem(HOME_CACHE_KEY);
+        if (homeCache) {
+          const { data: allListings, timestamp } = JSON.parse(homeCache);
+          const found = allListings?.find((l: Listing) => l.id === id);
+          if (found) {
+            setListing(found);
+            setLoading(false);
+            if (Date.now() - timestamp < CACHE_TTL) return;
+          }
+        }
+      } catch {}
+
+      // 3. Fetch from Supabase (background refresh if cache hit above, fresh load otherwise)
       const { data } = await supabase
         .from('listings')
         .select('*, profiles!listings_user_id_profiles_fkey(*)')
         .eq('id', id)
         .single();
+
       setListing(data);
       setLoading(false);
+
+      // 4. Save to per-listing cache
+      if (data) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+        } catch {}
+      }
     };
     if (id) fetchListing();
   }, [id]);
@@ -69,7 +111,13 @@ export default function ListingDetailPage() {
     if (!listing) return;
     const newStatus = listing.status === 'available' ? 'taken' : 'available';
     await supabase.from('listings').update({ status: newStatus }).eq('id', listing.id);
-    setListing({ ...listing, status: newStatus });
+    const updated = { ...listing, status: newStatus };
+    setListing(updated);
+    // Invalidate caches so stale status isn't shown
+    try {
+      sessionStorage.removeItem(`${LISTING_CACHE_PREFIX}${listing.id}`);
+      sessionStorage.removeItem(HOME_CACHE_KEY);
+    } catch {}
   };
 
   const submitReport = async () => {
