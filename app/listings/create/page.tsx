@@ -178,7 +178,11 @@ export default function CreateListingPage() {
               onChange={(e) => setTitle(e.target.value)}
               required
               className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="e.g., Amoxicillin 500mg Capsules"
+              placeholder={
+                category === 'medication' ? 'e.g., Amoxicillin 500mg Capsules' :
+                category === 'equipment'  ? 'e.g., Manual Wheelchair — Adult Size' :
+                'e.g., Sterile Gloves (Box of 100)'
+              }
             />
           </div>
 

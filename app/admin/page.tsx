@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Listing, Profile } from '@/lib/types';
+import { Listing, Profile, Report } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -12,9 +12,13 @@ type ListingFilter = 'pending' | 'approved' | 'all';
 export default function AdminPage() {
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'listings' | 'users'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'users' | 'reports'>('listings');
   const [listings, setListings] = useState<Listing[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [deletingListingId, setDeletingListingId] = useState<string | null>(null);
+  const [confirmDeleteListingId, setConfirmDeleteListingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [listingFilter, setListingFilter] = useState<ListingFilter>('pending');
@@ -30,12 +34,17 @@ export default function AdminPage() {
   }, [authLoading, user, profile, router]);
 
   const fetchData = async () => {
-    const [listingsRes, usersRes] = await Promise.all([
+    const [listingsRes, usersRes, reportsRes] = await Promise.all([
       supabase.from('listings').select('*, profiles!listings_user_id_profiles_fkey(*)').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase
+        .from('reports')
+        .select('*, listings(id, title, category, status, is_approved, profiles!listings_user_id_profiles_fkey(organization_name)), profiles!reports_reporter_id_profiles_fkey(organization_name, contact_person)')
+        .order('created_at', { ascending: false }),
     ]);
     setListings(listingsRes.data || []);
     setUsers(usersRes.data || []);
+    setReports((reportsRes.data as Report[]) || []);
     setLoading(false);
   };
 
@@ -89,10 +98,29 @@ export default function AdminPage() {
     setUsers(users.map(u => u.id === targetUser.id ? { ...u, is_admin: newStatus } : u));
   };
 
+  const dismissReport = async (reportId: string) => {
+    setDismissingId(reportId);
+    const { error } = await supabase.from('reports').delete().eq('id', reportId);
+    if (error) { alert('Failed to dismiss: ' + error.message); setDismissingId(null); return; }
+    setReports(prev => prev.filter(r => r.id !== reportId));
+    setDismissingId(null);
+  };
+
+  const deleteListingFromReport = async (listingId: string) => {
+    setDeletingListingId(listingId);
+    const { error } = await supabase.from('listings').delete().eq('id', listingId);
+    if (error) { alert('Failed to delete listing: ' + error.message); setDeletingListingId(null); return; }
+    setReports(prev => prev.filter(r => r.listing_id !== listingId));
+    setListings(prev => prev.filter(l => l.id !== listingId));
+    setDeletingListingId(null);
+    setConfirmDeleteListingId(null);
+  };
+
   if (authLoading || !profile?.is_admin) return null;
 
   const pendingCount = listings.filter(l => !l.is_approved).length;
   const approvedCount = listings.filter(l => l.is_approved).length;
+  const reportsCount = reports.length;
 
   const filteredListings = listings.filter(l => {
     // Filter by approval status
@@ -170,6 +198,17 @@ export default function AdminPage() {
             <p className="text-xs text-text-secondary">Admins</p>
           </div>
         </div>
+        <div className={`bg-white rounded-xl border p-4 flex items-center gap-3 ${reportsCount > 0 ? 'border-danger/40 bg-danger/5' : 'border-border'}`}>
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${reportsCount > 0 ? 'bg-danger/10' : 'bg-slate-50'}`}>
+            <svg className={`w-5 h-5 ${reportsCount > 0 ? 'text-danger' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
+          </div>
+          <div>
+            <p className={`text-xl font-bold ${reportsCount > 0 ? 'text-danger' : 'text-text'}`}>{reportsCount}</p>
+            <p className="text-xs text-text-secondary">Reports</p>
+          </div>
+        </div>
       </div>
 
       {/* Main Tabs */}
@@ -189,6 +228,19 @@ export default function AdminPage() {
           }`}
         >
           Users ({users.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`relative px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
+            activeTab === 'reports' ? 'gradient-primary text-white shadow-sm' : 'text-text-secondary hover:text-primary'
+          }`}
+        >
+          Reports
+          {reportsCount > 0 && (
+            <span className={`ml-1.5 px-1.5 py-0.5 text-xs font-bold rounded-full ${
+              activeTab === 'reports' ? 'bg-white/30 text-white' : 'bg-danger text-white'
+            }`}>{reportsCount}</span>
+          )}
         </button>
       </div>
 
@@ -339,6 +391,143 @@ export default function AdminPage() {
                 {listingFilter === 'pending' ? 'No listings pending approval.' :
                  listingFilter === 'approved' ? 'No approved listings yet.' :
                  'No listings found.'}
+              </div>
+            )}
+          </div>
+        </>
+      ) : activeTab === 'reports' ? (
+        <>
+          {reportsCount > 0 && (
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-danger/5 border border-danger/20 rounded-xl text-sm">
+              <svg className="w-5 h-5 text-danger flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+              </svg>
+              <p className="text-danger font-medium">{reportsCount} flagged listing{reportsCount !== 1 ? 's' : ''} need your review.</p>
+            </div>
+          )}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-background/50">
+                    <th className="text-left px-4 py-3 font-semibold text-text-secondary">Listing</th>
+                    <th className="text-left px-4 py-3 font-semibold text-text-secondary">Reason</th>
+                    <th className="text-left px-4 py-3 font-semibold text-text-secondary">Reporter</th>
+                    <th className="text-left px-4 py-3 font-semibold text-text-secondary">Details</th>
+                    <th className="text-left px-4 py-3 font-semibold text-text-secondary">Date</th>
+                    <th className="text-right px-4 py-3 font-semibold text-text-secondary">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((report) => (
+                    <tr
+                      key={report.id}
+                      className={`border-b border-border/50 transition-all duration-300 ${
+                        dismissingId === report.id || deletingListingId === report.listing_id
+                          ? 'opacity-40 pointer-events-none'
+                          : 'hover:bg-surface-hover bg-danger/5'
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        {report.listings ? (
+                          <Link href={`/listings/${report.listing_id}`} className="font-medium text-text hover:text-primary transition-colors">
+                            {report.listings.title}
+                          </Link>
+                        ) : (
+                          <span className="text-text-secondary italic">Listing deleted</span>
+                        )}
+                        {report.listings && (
+                          <p className="text-xs text-text-secondary capitalize mt-0.5">{report.listings.category}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-danger/10 text-danger border border-danger/20 capitalize">
+                          {report.reason.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-text-secondary">
+                        {report.profiles?.organization_name || report.profiles?.contact_person || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-text-secondary max-w-[180px]">
+                        <span className="line-clamp-2 text-xs">{report.message || <span className="italic">No details provided</span>}</span>
+                      </td>
+                      <td className="px-4 py-3 text-text-secondary whitespace-nowrap">{new Date(report.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
+                          {/* View */}
+                          {report.listings && (
+                            <Link
+                              href={`/listings/${report.listing_id}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg transition-colors"
+                            >
+                              View
+                            </Link>
+                          )}
+
+                          {/* Dismiss */}
+                          <button
+                            onClick={() => dismissReport(report.id)}
+                            disabled={dismissingId === report.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-text-secondary bg-white hover:bg-surface-hover border border-border rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {dismissingId === report.id ? (
+                              <>
+                                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                </svg>
+                                Dismissing…
+                              </>
+                            ) : 'Dismiss'}
+                          </button>
+
+                          {/* Delete Listing — inline confirm */}
+                          {report.listings && (
+                            confirmDeleteListingId === report.listing_id ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-danger font-medium">Sure?</span>
+                                <button
+                                  onClick={() => deleteListingFromReport(report.listing_id)}
+                                  disabled={deletingListingId === report.listing_id}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-white bg-danger hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  {deletingListingId === report.listing_id ? (
+                                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                    </svg>
+                                  ) : 'Yes, delete'}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteListingId(null)}
+                                  className="px-2.5 py-1.5 text-xs font-medium text-text-secondary bg-white border border-border rounded-lg hover:bg-surface-hover transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmDeleteListingId(report.listing_id)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-danger hover:text-white hover:bg-danger border border-danger/30 hover:border-danger rounded-lg transition-colors"
+                              >
+                                Delete Listing
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {reportsCount === 0 && (
+              <div className="text-center py-12">
+                <svg className="w-10 h-10 text-success/40 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-text">No reports</p>
+                <p className="text-xs text-text-secondary mt-1">The platform looks clean!</p>
               </div>
             )}
           </div>

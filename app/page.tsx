@@ -36,12 +36,15 @@ export default function HomePage() {
   };
 
   const filtered = listings.filter((l) => {
+    const q = search.toLowerCase();
     const matchesSearch =
       !search ||
-      l.title.toLowerCase().includes(search.toLowerCase()) ||
-      l.description.toLowerCase().includes(search.toLowerCase()) ||
-      (l.generic_name && l.generic_name.toLowerCase().includes(search.toLowerCase())) ||
-      (l.trade_name && l.trade_name.toLowerCase().includes(search.toLowerCase()));
+      l.title.toLowerCase().includes(q) ||
+      l.description.toLowerCase().includes(q) ||
+      (l.generic_name && l.generic_name.toLowerCase().includes(q)) ||
+      (l.trade_name && l.trade_name.toLowerCase().includes(q)) ||
+      (l.profiles?.organization_name && l.profiles.organization_name.toLowerCase().includes(q)) ||
+      (l.profiles?.location && l.profiles.location.toLowerCase().includes(q));
     const matchesCategory = category === 'all' || l.category === category;
     const notExpired = !l.expiry_date || new Date(l.expiry_date) >= new Date(new Date().toDateString());
     return matchesSearch && matchesCategory && notExpired;
@@ -121,15 +124,17 @@ export default function HomePage() {
       {/* Search & Filter */}
       <section id="listings" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
+          {/* Search — matches title, names, org, location */}
           <div className="relative flex-1">
-            <img src="/images/logo.svg" alt="" className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 object-contain" />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
-              placeholder="Search by title, generic name, or trade name..."
+              placeholder="Search by name, location, organization…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm text-text placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm text-text placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
             />
           </div>
 

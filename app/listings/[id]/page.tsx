@@ -8,6 +8,14 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Lightbox from '@/components/Lightbox';
 
+const REASON_LABELS: Record<string, string> = {
+  inappropriate: 'Inappropriate content',
+  fraudulent: 'Fraudulent / scam',
+  expired: 'Already expired or unavailable',
+  duplicate: 'Duplicate listing',
+  other: 'Other',
+};
+
 
 export default function ListingDetailPage() {
   const { id } = useParams();
@@ -15,6 +23,13 @@ export default function ListingDetailPage() {
   const router = useRouter();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  // Report / flag state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('inappropriate');
+  const [reportMessage, setReportMessage] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [alreadyReported, setAlreadyReported] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -29,6 +44,21 @@ export default function ListingDetailPage() {
     if (id) fetchListing();
   }, [id]);
 
+  // Check if the current user has already reported this listing
+  useEffect(() => {
+    if (!id || !user) return;
+    const checkExistingReport = async () => {
+      const { data } = await supabase
+        .from('reports')
+        .select('id')
+        .eq('listing_id', id as string)
+        .eq('reporter_id', user.id)
+        .maybeSingle();
+      if (data) setAlreadyReported(true);
+    };
+    checkExistingReport();
+  }, [id, user]);
+
   const handleDelete = async () => {
     if (!listing || !confirm('Are you sure you want to delete this listing?')) return;
     await supabase.from('listings').delete().eq('id', listing.id);
@@ -40,6 +70,25 @@ export default function ListingDetailPage() {
     const newStatus = listing.status === 'available' ? 'taken' : 'available';
     await supabase.from('listings').update({ status: newStatus }).eq('id', listing.id);
     setListing({ ...listing, status: newStatus });
+  };
+
+  const submitReport = async () => {
+    if (!listing || !user || reportSubmitting) return;
+    setReportSubmitting(true);
+    const { error } = await supabase.from('reports').insert({
+      listing_id: listing.id,
+      reporter_id: user.id,
+      reason: reportReason,
+      message: reportMessage.trim() || null,
+    });
+    setReportSubmitting(false);
+    if (!error) {
+      setAlreadyReported(true);
+      setReportSuccess(true);
+      setReportModalOpen(false);
+      setReportMessage('');
+      setTimeout(() => setReportSuccess(false), 4000);
+    }
   };
 
   if (loading) {
@@ -275,8 +324,118 @@ export default function ListingDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Report button — only for logged-in non-owners */}
+          {user && !isOwner && (
+            <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
+              {alreadyReported ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-text-secondary py-0.5">
+                  <svg className="w-4 h-4 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Report submitted — thank you
+                </div>
+              ) : (
+                <button
+                  onClick={() => setReportModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-danger hover:bg-danger/5 rounded-lg transition-colors border border-danger/20"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                  </svg>
+                  Report this listing
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ── Success toast ── */}
+      {reportSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-success text-white text-sm font-semibold rounded-xl shadow-xl animate-slide-up">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Report submitted. Thank you!
+        </div>
+      )}
+
+      {/* ── Report Modal ── */}
+      {reportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setReportModalOpen(false)}
+          />
+          {/* Card */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-text">Report this listing</h2>
+                  <p className="text-xs text-text-secondary mt-0.5">Help us keep the platform safe and trustworthy.</p>
+                </div>
+              </div>
+
+              {/* Fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1.5">
+                    Reason <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/50 transition-colors"
+                  >
+                    {Object.entries(REASON_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1.5">
+                    Additional details{' '}
+                    <span className="text-text-secondary font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={reportMessage}
+                    onChange={(e) => setReportMessage(e.target.value)}
+                    placeholder="Provide more context about the issue…"
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/50 transition-colors resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 mt-5">
+                <button
+                  onClick={() => setReportModalOpen(false)}
+                  className="flex-1 py-2.5 text-sm font-medium text-text-secondary bg-white border border-border rounded-lg hover:bg-surface-hover transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitReport}
+                  disabled={reportSubmitting}
+                  className="flex-1 py-2.5 text-sm font-semibold text-white bg-danger hover:bg-red-600 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {reportSubmitting ? 'Submitting…' : 'Submit Report'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

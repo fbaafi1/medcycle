@@ -37,3 +37,24 @@ export interface Listing {
   // Joined
   profiles?: Profile;
 }
+
+export type ReportReason = 'inappropriate' | 'fraudulent' | 'expired' | 'duplicate' | 'other';
+
+export interface Report {
+  id: string;
+  listing_id: string;
+  reporter_id: string;
+  reason: ReportReason;
+  message: string | null;
+  created_at: string;
+  // Joined via PostgREST
+  listings?: {
+    id: string;
+    title: string;
+    category: string;
+    status: string;
+    is_approved: boolean;
+    profiles?: { organization_name: string };
+  };
+  profiles?: { organization_name: string; contact_person: string };
+}
