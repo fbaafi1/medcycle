@@ -11,9 +11,38 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "The MedCycle — Healthcare Resource Exchange",
+  metadataBase: new URL('https://themedcycle.com'),
+  title: {
+    default: "The MedCycle — Healthcare Resource Exchange",
+    template: "%s | The MedCycle",
+  },
   description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
-  keywords: ["medical supplies", "healthcare", "resource exchange", "medications", "medical equipment"],
+  keywords: ["medical supplies", "healthcare", "resource exchange", "medications", "medical equipment", "donate medicine", "medical donations"],
+  authors: [{ name: "The MedCycle Team" }],
+  creator: "The MedCycle",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://themedcycle.com",
+    siteName: "The MedCycle",
+    title: "The MedCycle — Healthcare Resource Exchange",
+    description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The MedCycle — Healthcare Resource Exchange",
+    description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+    },
+  },
 };
 
 export default function RootLayout({
