@@ -5,14 +5,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://themedcycle.com',
       lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: 'https://themedcycle.com/listings',
-      lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 1,
     },
     {
       url: 'https://themedcycle.com/listings/create',
