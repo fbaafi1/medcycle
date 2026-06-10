@@ -53,6 +53,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <head>
+        {/* Preconnect to Supabase — warms TCP/TLS before any JS fetch fires */}
+        <link rel="preconnect" href="https://cdxgsaozgghsngqjhdjm.supabase.co" />
+        <link rel="dns-prefetch" href="https://cdxgsaozgghsngqjhdjm.supabase.co" />
         <link rel="icon" type="image/svg+xml" href="/images/logo.svg?v=2" />
         <link rel="shortcut icon" href="/images/logo.svg?v=2" />
         <link rel="apple-touch-icon" href="/images/logo.svg?v=2" />

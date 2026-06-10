@@ -19,7 +19,7 @@ const REASON_LABELS: Record<string, string> = {
 
 const LISTING_CACHE_PREFIX = 'medcycle_listing_';
 const HOME_CACHE_KEY = 'medcycle_listings_v1';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 export default function ListingDetailPage() {
   const { id } = useParams();
@@ -201,7 +201,7 @@ export default function ListingDetailPage() {
           <div className="rounded-2xl overflow-hidden border border-border bg-white mb-6">
             {listing.image_url ? (
               <Lightbox src={listing.image_url} alt={listing.title}>
-                <img src={listing.image_url} alt={listing.title} className="w-full h-64 sm:h-80 object-cover hover:opacity-90 transition-opacity" />
+                <img src={listing.image_url} alt={listing.title} loading="lazy" decoding="async" className="w-full h-64 sm:h-80 object-cover hover:opacity-90 transition-opacity" />
               </Lightbox>
             ) : (
               <div className="w-full h-full flex items-center justify-center">

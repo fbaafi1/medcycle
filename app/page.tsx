@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 const ITEMS_PER_PAGE = 9;
 const CACHE_KEY = 'medcycle_listings_v1';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -124,8 +124,8 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         {/* Background images */}
         <div className="absolute inset-0 grid grid-cols-2">
-          <img src="/images/pills.jpg" alt="" className="w-full h-full object-cover" />
-          <img src="/images/stethoscope.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="/images/pills.jpg" alt="" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
+          <img src="/images/stethoscope.jpg" alt="" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
           {/* Blend seam between images */}
           <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-32 bg-gradient-to-r from-transparent via-[#0c4a6e]/60 to-transparent pointer-events-none" />
         </div>
