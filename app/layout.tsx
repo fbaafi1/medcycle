@@ -73,11 +73,6 @@ export default function RootLayout({
         {/* Preconnect to Supabase — warms TCP/TLS before any JS fetch fires */}
         <link rel="preconnect" href="https://cdxgsaozgghsngqjhdjm.supabase.co" />
         <link rel="dns-prefetch" href="https://cdxgsaozgghsngqjhdjm.supabase.co" />
-        {/* Browser tab favicon */}
-        <link rel="icon" type="image/svg+xml" href="/images/The_MedCycle_Logo.svg?v=3" />
-        <link rel="shortcut icon" href="/images/The_MedCycle_Logo.svg?v=3" />
-        {/* Apple home screen icon */}
-        <link rel="apple-touch-icon" href="/images/The_MedCycle_Logo.svg?v=3" />
       </head>
       <body className="min-h-full flex flex-col font-sans antialiased">
         <AuthProvider>
