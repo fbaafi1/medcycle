@@ -272,7 +272,7 @@ export default function AdminPage() {
 
       {/* Search */}
       <div className="relative mb-4">
-        <img src="/images/logo.svg" alt="" className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 object-contain" />
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
         <input
           type="text"
           placeholder={activeTab === 'listings' ? 'Search listings by title, category, or organization...' : 'Search users by name, organization, or location...'}

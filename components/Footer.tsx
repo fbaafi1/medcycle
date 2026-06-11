@@ -7,7 +7,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <img
-                src="/images/logo.svg"
+                src="/images/The_MedCycle_Logo.svg"
                 alt="The MedCycle Logo"
                 className="w-12 h-12 object-contain drop-shadow-sm"
               />

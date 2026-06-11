@@ -1,38 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="geometricPrecision">
-  <!-- Rounded square background -->
-  <rect width="64" height="64" rx="14" fill="#0369a1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" shape-rendering="geometricPrecision">
+  <rect width="200" height="200" fill="white"/>
 
-  <!-- Subtle inner glow ring -->
-  <rect width="64" height="64" rx="14" fill="none" stroke="#0ea5e9" stroke-width="1.5" opacity="0.4"/>
+  <!-- Blue arc: left side, going UP (counterclockwise, bottom to top) -->
+  <path d="M 100 180 A 80 80 0 0 0 100 20"
+        fill="none" stroke="#0369a1" stroke-width="18" stroke-linecap="butt"/>
+  <!-- Blue arrowhead at top, pointing left -->
+  <polygon points="80,20 100,9 100,31" fill="#0369a1"/>
 
-  <!-- Recycling / cycle arrow circle (teal-green) -->
-  <!-- Arc 1: top-right (~30° to 150°), arrow pointing clockwise -->
-  <path
-    d="M 32 10
-       A 22 22 0 0 1 51.1 43"
-    fill="none" stroke="#34d399" stroke-width="3.5" stroke-linecap="round"/>
-  <!-- Arrowhead for arc 1 -->
-  <polygon points="51.1,43 44,39 55,37" fill="#34d399"/>
+  <!-- Green arc: right side, going DOWN (clockwise, top to bottom) -->
+  <path d="M 100 20 A 80 80 0 0 1 100 180"
+        fill="none" stroke="#059669" stroke-width="18" stroke-linecap="butt"/>
+  <!-- Green arrowhead at bottom, pointing right -->
+  <polygon points="120,180 100,169 100,191" fill="#059669"/>
 
-  <!-- Arc 2: bottom (~150° to 270°), arrow pointing clockwise -->
-  <path
-    d="M 51.1 43
-       A 22 22 0 0 1 12.9 43"
-    fill="none" stroke="#34d399" stroke-width="3.5" stroke-linecap="round"/>
-  <!-- Arrowhead for arc 2 -->
-  <polygon points="12.9,43 20,47 9,45" fill="#34d399"/>
+  <!-- White heart inside blue arc (upper-left) -->
+  <path d="M 36 72 C 36 68 33 65 30 67 C 27 69 28 73 31 76 L 36 81 L 41 76 C 44 73 45 69 42 67 C 39 65 36 68 36 72Z" fill="white"/>
 
-  <!-- Arc 3: left (~270° to 390°/30°), arrow pointing clockwise -->
-  <path
-    d="M 12.9 43
-       A 22 22 0 0 1 32 10"
-    fill="none" stroke="#34d399" stroke-width="3.5" stroke-linecap="round"/>
-  <!-- Arrowhead for arc 3 -->
-  <polygon points="32,10 35,18 28,18" fill="#34d399"/>
+  <!-- White recycle arrows inside green arc (upper-right) -->
+  <g transform="translate(163,70) scale(0.55)">
+    <path d="M0-16 L7 0 L4 0 A12 12 0 0 1 11 11 L14 8 L14 18 L4 14 L7 11 A7 7 0 0 0 3 4Z" fill="white"/>
+    <path d="M0-16 L7 0 L4 0 A12 12 0 0 1 11 11 L14 8 L14 18 L4 14 L7 11 A7 7 0 0 0 3 4Z" fill="white" transform="rotate(120)"/>
+    <path d="M0-16 L7 0 L4 0 A12 12 0 0 1 11 11 L14 8 L14 18 L4 14 L7 11 A7 7 0 0 0 3 4Z" fill="white" transform="rotate(240)"/>
+  </g>
 
-  <!-- Medical cross (white, centered) -->
-  <!-- Vertical bar -->
-  <rect x="27" y="20" width="10" height="24" rx="2.5" fill="white"/>
-  <!-- Horizontal bar -->
-  <rect x="20" y="27" width="24" height="10" rx="2.5" fill="white"/>
+  <!-- Medical cross — blue left half, green right half -->
+  <rect x="78" y="62" width="10" height="62" rx="2" fill="#0369a1"/>
+  <rect x="60" y="80" width="28" height="18" rx="2" fill="#0369a1"/>
+  <rect x="88" y="62" width="10" height="62" rx="2" fill="#059669"/>
+  <rect x="88" y="80" width="28" height="18" rx="2" fill="#059669"/>
+
+  <!-- Green leaf on bottom-right of cross -->
+  <ellipse cx="94" cy="126" rx="8" ry="13" fill="#34d399" transform="rotate(-30 94 126)"/>
+
+  <!-- Blue hand (left), cradling cross from below -->
+  <path d="M 68 140 Q 58 152 64 160 Q 69 165 78 162 L 100 154 L 100 146 Z" fill="#0369a1" opacity="0.88"/>
+  <!-- Green hand (right), cradling cross from below -->
+  <path d="M 132 140 Q 142 152 136 160 Q 131 165 122 162 L 100 154 L 100 146 Z" fill="#059669" opacity="0.88"/>
+
+  <!-- LEFT negative space — stethoscope -->
+  <circle cx="34" cy="94" r="7" fill="none" stroke="#0369a1" stroke-width="2.5"/>
+  <path d="M 34 87 Q 34 74 23 74 Q 12 74 12 85 Q 12 95 21 96" fill="none" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="21" cy="99" r="3" fill="#0369a1"/>
+
+  <!-- LEFT negative space — wheelchair -->
+  <circle cx="37" cy="143" r="4" fill="#0369a1"/>
+  <path d="M 37 147 L 37 156 L 29 160" fill="none" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 37 154 L 45 154 L 47 160" fill="none" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="29" cy="165" r="5" fill="none" stroke="#0369a1" stroke-width="2"/>
+  <circle cx="45" cy="165" r="5" fill="none" stroke="#0369a1" stroke-width="2"/>
+
+  <!-- RIGHT negative space — pill blister pack -->
+  <rect x="151" y="88" width="30" height="20" rx="3" fill="none" stroke="#059669" stroke-width="2"/>
+  <line x1="166" y1="88" x2="166" y2="108" stroke="#059669" stroke-width="1.5"/>
+  <line x1="151" y1="98" x2="181" y2="98" stroke="#059669" stroke-width="1.5"/>
+  <ellipse cx="158" cy="93" rx="4" ry="4" fill="#059669"/>
+  <ellipse cx="174" cy="93" rx="4" ry="4" fill="#059669"/>
+  <ellipse cx="158" cy="103" rx="4" ry="4" fill="#059669"/>
+  <ellipse cx="174" cy="103" rx="4" ry="4" fill="#059669"/>
+
+  <!-- RIGHT negative space — hospital bed -->
+  <rect x="149" y="148" width="34" height="16" rx="2" fill="none" stroke="#059669" stroke-width="2"/>
+  <rect x="156" y="140" width="14" height="8" rx="2" fill="none" stroke="#059669" stroke-width="2"/>
+  <line x1="153" y1="164" x2="153" y2="172" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="179" y1="164" x2="179" y2="172" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
 </svg>

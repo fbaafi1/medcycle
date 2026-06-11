@@ -27,11 +27,20 @@ export const metadata: Metadata = {
     siteName: "The MedCycle",
     title: "The MedCycle — Healthcare Resource Exchange",
     description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
+    images: [
+      {
+        url: "/images/The_MedCycle_Logo.svg",
+        width: 260,
+        height: 260,
+        alt: "The MedCycle Logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "The MedCycle — Healthcare Resource Exchange",
     description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
+    images: ["/images/The_MedCycle_Logo.svg"],
   },
   robots: {
     index: true,
@@ -56,9 +65,11 @@ export default function RootLayout({
         {/* Preconnect to Supabase — warms TCP/TLS before any JS fetch fires */}
         <link rel="preconnect" href="https://cdxgsaozgghsngqjhdjm.supabase.co" />
         <link rel="dns-prefetch" href="https://cdxgsaozgghsngqjhdjm.supabase.co" />
-        <link rel="icon" type="image/svg+xml" href="/images/logo.svg?v=2" />
-        <link rel="shortcut icon" href="/images/logo.svg?v=2" />
-        <link rel="apple-touch-icon" href="/images/logo.svg?v=2" />
+        {/* Browser tab favicon */}
+        <link rel="icon" type="image/svg+xml" href="/images/The_MedCycle_Logo.svg?v=3" />
+        <link rel="shortcut icon" href="/images/The_MedCycle_Logo.svg?v=3" />
+        {/* Apple home screen icon */}
+        <link rel="apple-touch-icon" href="/images/The_MedCycle_Logo.svg?v=3" />
       </head>
       <body className="min-h-full flex flex-col font-sans antialiased">
         <AuthProvider>

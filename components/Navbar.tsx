@@ -29,11 +29,11 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 sm:h-24">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <img
-              src="/images/logo.svg"
+              src="/images/The_MedCycle_Logo.svg"
               alt="The MedCycle Logo"
-              className="w-14 h-14 sm:w-20 sm:h-20 object-contain group-hover:scale-105 transition-transform drop-shadow-md"
+              className="w-16 h-16 sm:w-24 sm:h-24 object-contain group-hover:scale-105 transition-transform drop-shadow-md"
             />
             <span className="text-xl sm:text-2xl font-bold text-primary-dark tracking-tight">
               The Med<span className="text-secondary">Cycle</span>
