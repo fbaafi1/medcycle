@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
     images: [
       {
-        url: "/images/The_MedCycle_Logo.svg",
-        width: 260,
-        height: 260,
+        url: "/images/og-image.png",
+        width: 512,
+        height: 512,
         alt: "The MedCycle Logo",
       },
     ],
@@ -40,7 +40,15 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The MedCycle — Healthcare Resource Exchange",
     description: "A platform for hospitals and individuals to share medications, medical supplies, and equipment with those who need them.",
-    images: ["/images/The_MedCycle_Logo.svg"],
+    images: ["/images/og-image.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/images/The_MedCycle_Logo.svg", type: "image/svg+xml" },
+    ],
+    apple: "/favicon.png",
+    shortcut: "/favicon.png",
   },
   robots: {
     index: true,
