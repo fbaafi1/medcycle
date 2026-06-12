@@ -1,14 +1,34 @@
 import Link from 'next/link';
 import { Listing } from '@/lib/types';
 
-
 const categoryColors: Record<string, string> = {
   medication: 'bg-blue-50 text-blue-700 border-blue-200',
   equipment: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   supply: 'bg-violet-50 text-violet-700 border-violet-200',
 };
 
+/** Returns expiry urgency info for a medication listing. */
+function getExpiryInfo(expiryDate: string | null): {
+  label: string;
+  style: string;
+  pulse: boolean;
+} | null {
+  if (!expiryDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const daysLeft = Math.round((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) return null; // already expired — auto-deleted by cron, shouldn't render
+  if (daysLeft === 0) return { label: 'Expires Today', style: 'bg-red-600 text-white border-red-700', pulse: true };
+  if (daysLeft <= 7)  return { label: `Expires in ${daysLeft}d`, style: 'bg-red-500 text-white border-red-600', pulse: true };
+  if (daysLeft <= 30) return { label: 'Expires Soon', style: 'bg-orange-400 text-white border-orange-500', pulse: false };
+  return null;
+}
+
 export default function ListingCard({ listing }: { listing: Listing }) {
+  const expiryInfo = listing.category === 'medication' ? getExpiryInfo(listing.expiry_date) : null;
   const isAvailable = listing.status === 'available';
   const isPending = listing.is_approved === false;
 
@@ -34,12 +54,18 @@ export default function ListingCard({ listing }: { listing: Listing }) {
               </svg>
             </div>
           )}
-          {/* Status badge */}
+          {/* Status & expiry badges */}
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
             {isPending && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                 Pending Approval
+              </span>
+            )}
+            {expiryInfo && (
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-sm ${expiryInfo.style}`}>
+                <span className={`w-1.5 h-1.5 rounded-full bg-white/70 ${expiryInfo.pulse ? 'animate-pulse' : ''}`} />
+                {expiryInfo.label}
               </span>
             )}
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${isAvailable ? 'badge-available' : 'badge-taken'}`}>
@@ -71,7 +97,14 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           {/* Category-specific info */}
           <div className="text-xs text-text-secondary space-y-0.5">
             {listing.category === 'medication' && listing.expiry_date && (
-              <p>Expires: <span className="font-medium">{new Date(listing.expiry_date).toLocaleDateString()}</span></p>
+              <p>
+                Expires:{' '}
+                <span className={`font-medium ${
+                  expiryInfo?.pulse ? 'text-red-600' : expiryInfo ? 'text-orange-500' : ''
+                }`}>
+                  {new Date(listing.expiry_date).toLocaleDateString()}
+                </span>
+              </p>
             )}
             {listing.category === 'equipment' && listing.condition && (
               <p>Condition: <span className="font-medium capitalize">{listing.condition.replace('_', ' ')}</span></p>

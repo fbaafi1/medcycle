@@ -116,6 +116,79 @@ export default function AdminPage() {
     setConfirmDeleteListingId(null);
   };
 
+  // ── CSV Export ──────────────────────────────────────────────
+  const escapeCSV = (val: unknown): string => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const downloadCSV = (rows: unknown[][], filename: string) => {
+    const csv = rows.map(row => row.map(escapeCSV).join(',')).join('\n');
+    // \uFEFF = UTF-8 BOM so Excel opens with correct encoding
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportListings = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const headers = ['Title', 'Category', 'Status', 'Approved', 'Generic Name', 'Trade Name', 'Expiry Date', 'Condition', 'Quantity', 'Organization', 'Location', 'Posted Date'];
+    const rows = filteredListings.map(l => [
+      l.title,
+      l.category,
+      l.status,
+      l.is_approved ? 'Yes' : 'No',
+      l.generic_name ?? '',
+      l.trade_name ?? '',
+      l.expiry_date ? new Date(l.expiry_date).toLocaleDateString() : '',
+      l.condition ?? '',
+      l.quantity ?? '',
+      l.profiles?.organization_name ?? '',
+      l.profiles?.location ?? '',
+      new Date(l.created_at).toLocaleDateString(),
+    ]);
+    downloadCSV([headers, ...rows], `medcycle_listings_${today}.csv`);
+  };
+
+  const exportUsers = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const headers = ['Organization', 'Contact Person', 'Phone', 'Location', 'Role', 'Has License', 'Joined'];
+    const rows = filteredUsers.map(u => [
+      u.organization_name ?? '',
+      u.contact_person ?? '',
+      u.phone_number ?? '',
+      u.location ?? '',
+      u.is_admin ? 'Admin' : 'User',
+      u.license_url ? 'Yes' : 'No',
+      new Date(u.created_at).toLocaleDateString(),
+    ]);
+    downloadCSV([headers, ...rows], `medcycle_users_${today}.csv`);
+  };
+
+  const exportReports = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const headers = ['Listing Title', 'Category', 'Reason', 'Reporter', 'Details', 'Date Reported'];
+    const rows = reports.map(r => [
+      r.listings?.title ?? 'Listing deleted',
+      r.listings?.category ?? '',
+      r.reason.replace('_', ' '),
+      r.profiles?.organization_name ?? r.profiles?.contact_person ?? '',
+      r.message ?? '',
+      new Date(r.created_at).toLocaleDateString(),
+    ]);
+    downloadCSV([headers, ...rows], `medcycle_reports_${today}.csv`);
+  };
+
   if (authLoading || !profile?.is_admin) return null;
 
   const pendingCount = listings.filter(l => !l.is_approved).length;
@@ -270,16 +343,30 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
-        <input
-          type="text"
-          placeholder={activeTab === 'listings' ? 'Search listings by title, category, or organization...' : 'Search users by name, organization, or location...'}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm text-text placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-        />
+      {/* Search + Export */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+          <input
+            type="text"
+            placeholder={activeTab === 'listings' ? 'Search listings by title, category, or organization...' : activeTab === 'users' ? 'Search users by name, organization, or location...' : 'Search reports...'}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm text-text placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          />
+        </div>
+
+        {/* Export CSV button */}
+        <button
+          onClick={activeTab === 'listings' ? exportListings : activeTab === 'users' ? exportUsers : exportReports}
+          title={`Export current ${activeTab} view as CSV`}
+          className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border text-sm font-medium text-text-secondary rounded-lg hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span className="hidden sm:inline">Export CSV</span>
+        </button>
       </div>
 
       {loading ? (

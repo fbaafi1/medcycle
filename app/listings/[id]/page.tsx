@@ -16,6 +16,42 @@ const REASON_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+/** Returns expiry urgency info for a medication listing. */
+function getExpiryInfo(expiryDate: string | null): {
+  label: string;
+  bannerStyle: string;
+  textStyle: string;
+  pulse: boolean;
+} | null {
+  if (!expiryDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const daysLeft = Math.round((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) return null;
+  if (daysLeft === 0) return {
+    label: '⚠️ This medication expires TODAY — act immediately.',
+    bannerStyle: 'bg-red-50 border-red-300 text-red-800',
+    textStyle: 'text-red-600 font-bold',
+    pulse: true,
+  };
+  if (daysLeft <= 7) return {
+    label: `⚠️ This medication expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'} — urgent pickup needed.`,
+    bannerStyle: 'bg-red-50 border-red-200 text-red-700',
+    textStyle: 'text-red-600 font-semibold',
+    pulse: true,
+  };
+  if (daysLeft <= 30) return {
+    label: `🕐 This medication expires in ${daysLeft} days — pickup recommended soon.`,
+    bannerStyle: 'bg-orange-50 border-orange-200 text-orange-800',
+    textStyle: 'text-orange-500 font-semibold',
+    pulse: false,
+  };
+  return null;
+}
+
 
 const LISTING_CACHE_PREFIX = 'medcycle_listing_';
 const HOME_CACHE_KEY = 'medcycle_listings_v1';
@@ -166,6 +202,7 @@ export default function ListingDetailPage() {
 
   const isOwner = user?.id === listing.user_id;
   const isAvailable = listing.status === 'available';
+  const expiryInfo = listing.category === 'medication' ? getExpiryInfo(listing.expiry_date) : null;
   const phone = listing.profiles?.phone_number?.replace(/\s/g, '') || '';
   const whatsappNumber = phone.replace('+', '');
 
@@ -191,6 +228,16 @@ export default function ListingDetailPage() {
               This listing is not yet visible on the platform. An admin will review and approve it shortly.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Expiry warning banner */}
+      {expiryInfo && (
+        <div className={`mb-6 flex items-start gap-3 px-4 py-3.5 border rounded-xl text-sm animate-fade-in ${expiryInfo.bannerStyle}`}>
+          <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <p className={`font-medium ${expiryInfo.pulse ? 'animate-pulse' : ''}`}>{expiryInfo.label}</p>
         </div>
       )}
 
@@ -249,7 +296,12 @@ export default function ListingDetailPage() {
                     {listing.expiry_date && (
                       <div>
                         <span className="text-text-secondary">Expiry Date:</span>
-                        <span className="ml-2 font-medium text-text">{new Date(listing.expiry_date).toLocaleDateString()}</span>
+                        <span className={`ml-2 ${expiryInfo ? expiryInfo.textStyle : 'font-medium text-text'}`}>
+                          {new Date(listing.expiry_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          {expiryInfo?.pulse && (
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">URGENT</span>
+                          )}
+                        </span>
                       </div>
                     )}
                   </div>
