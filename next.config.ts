@@ -37,13 +37,14 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Pages: serve stale immediately, revalidate in background every 60 s
+      // Pages: never cache HTML at the CDN layer — always serve fresh
+      // (client-side sessionStorage cache handles repeat-visit performance)
       {
         source: '/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=60, stale-while-revalidate=300',
+            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },

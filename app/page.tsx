@@ -9,10 +9,22 @@ import Link from 'next/link';
 const ITEMS_PER_PAGE = 9;
 const CACHE_KEY = 'medcycle_listings_v1';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const FETCH_TIMEOUT_MS = 10_000; // 10 s — abort if mobile network stalls
+
+/** True when the user triggered a hard reload (F5 / pull-to-refresh). */
+function isHardReload(): boolean {
+  try {
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type === 'reload';
+  } catch {
+    return false;
+  }
+}
 
 export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'all'>('all');
@@ -34,7 +46,16 @@ export default function HomePage() {
   }, [debouncedSearch, category]);
 
   const fetchListings = async () => {
-    // 1. Show cached data immediately (instant on repeat visits)
+    setError(false);
+
+    // 1. On a hard reload (F5 / pull-to-refresh) clear the cache so we
+    //    always fetch fresh data — mobile browsers keep sessionStorage alive
+    //    across reloads, which can silently serve stale or empty data.
+    if (isHardReload()) {
+      try { sessionStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    }
+
+    // 2. Show cached data immediately (instant on repeat visits)
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -48,18 +69,24 @@ export default function HomePage() {
       }
     } catch { /* sessionStorage unavailable — continue to network */ }
 
-    // 2. Fetch fresh data from Supabase (background refresh if cache existed)
+    // 3. Fetch fresh data from Supabase with a timeout so we don't hang
+    //    indefinitely on a slow/dropped mobile connection
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
     try {
       const { data, error } = await supabase
         .from('listings')
         .select('*, profiles!listings_user_id_profiles_fkey(*)')
-        .eq('is_approved', true);
+        .eq('is_approved', true)
+        .abortSignal(controller.signal);
 
+      clearTimeout(timeoutId);
       if (error) throw error;
       const shuffled = (data || []).sort(() => Math.random() - 0.5);
       setListings(shuffled);
 
-      // 3. Persist to cache for next visit
+      // 4. Persist to cache for next visit
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
           data: shuffled,
@@ -67,10 +94,11 @@ export default function HomePage() {
         }));
       } catch { /* storage full or unavailable */ }
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Failed to fetch listings:', err);
-      // Don't overwrite cached data on network error
+      // Only show error state if we have nothing to display
+      if (listings.length === 0) setError(true);
     } finally {
-      // Always clear the spinner — never leave user staring at skeletons
       setLoading(false);
     }
   };
@@ -212,6 +240,23 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <svg className="w-12 h-12 text-danger/40 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-text mb-2">Unable to load listings</h3>
+            <p className="text-sm text-text-secondary mb-6">Check your internet connection and try again.</p>
+            <button
+              onClick={() => { setLoading(true); fetchListings(); }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 gradient-primary text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-md"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Try Again
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">

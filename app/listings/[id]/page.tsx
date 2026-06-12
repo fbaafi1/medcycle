@@ -56,6 +56,16 @@ function getExpiryInfo(expiryDate: string | null): {
 const LISTING_CACHE_PREFIX = 'medcycle_listing_';
 const HOME_CACHE_KEY = 'medcycle_listings_v1';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const FETCH_TIMEOUT_MS = 10_000;
+
+function isHardReload(): boolean {
+  try {
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type === 'reload';
+  } catch {
+    return false;
+  }
+}
 
 export default function ListingDetailPage() {
   const { id } = useParams();
@@ -63,6 +73,7 @@ export default function ListingDetailPage() {
   const router = useRouter();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   // Report / flag state
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState('inappropriate');
@@ -73,7 +84,16 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     const fetchListing = async () => {
+      setFetchError(false);
       const cacheKey = `${LISTING_CACHE_PREFIX}${id}`;
+
+      // Clear cache on hard reload so mobile gets fresh data
+      if (isHardReload()) {
+        try {
+          sessionStorage.removeItem(cacheKey);
+          sessionStorage.removeItem(HOME_CACHE_KEY);
+        } catch { /* ignore */ }
+      }
 
       // 1. Try per-listing cache first
       try {
@@ -88,7 +108,7 @@ export default function ListingDetailPage() {
         }
       } catch {}
 
-      // 2. Fall back to homepage listings cache (user clicked from homepage — data already available)
+      // 2. Fall back to homepage listings cache
       try {
         const homeCache = sessionStorage.getItem(HOME_CACHE_KEY);
         if (homeCache) {
@@ -102,21 +122,33 @@ export default function ListingDetailPage() {
         }
       } catch {}
 
-      // 3. Fetch from Supabase (background refresh if cache hit above, fresh load otherwise)
-      const { data } = await supabase
-        .from('listings')
-        .select('*, profiles!listings_user_id_profiles_fkey(*)')
-        .eq('id', id)
-        .single();
+      // 3. Fetch from Supabase with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-      setListing(data);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('listings')
+          .select('*, profiles!listings_user_id_profiles_fkey(*)')
+          .eq('id', id)
+          .abortSignal(controller.signal)
+          .single();
 
-      // 4. Save to per-listing cache
-      if (data) {
-        try {
-          sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
-        } catch {}
+        clearTimeout(timeoutId);
+        setListing(data);
+        setLoading(false);
+
+        // 4. Save to per-listing cache
+        if (data) {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+          } catch {}
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.error('Failed to fetch listing:', err);
+        if (!listing) setFetchError(true);
+        setLoading(false);
       }
     };
     if (id) fetchListing();
@@ -183,6 +215,28 @@ export default function ListingDetailPage() {
           <div className="h-72 bg-border/30 rounded-2xl" />
           <div className="h-32 bg-border/30 rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <svg className="w-12 h-12 text-danger/40 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+        <h2 className="text-xl font-bold text-text mb-2">Connection error</h2>
+        <p className="text-sm text-text-secondary mb-6">Unable to load this listing. Check your internet connection.</p>
+        <button
+          onClick={() => { setLoading(true); setFetchError(false); }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 gradient-primary text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-md mr-3"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Try Again
+        </button>
+        <Link href="/" className="text-primary font-medium hover:underline text-sm">← Back to listings</Link>
       </div>
     );
   }
