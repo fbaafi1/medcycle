@@ -179,9 +179,9 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {news.map((article, i) => (
-                <article key={article.id}
+                <Link key={article.id} href={`/news/${article.id}`}
                   className="bg-background rounded-2xl border border-border overflow-hidden
-                    hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col animate-fade-in"
+                    hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col animate-fade-in cursor-pointer"
                   style={{ animationDelay: `${i * 80}ms` }}>
                   <div className="h-28 overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
                     {article.image_url
@@ -197,7 +197,7 @@ export default function HomePage() {
                     <h3 className="font-bold text-text text-sm leading-snug mb-2 flex-1">{article.title}</h3>
                     <p className="text-text-secondary text-xs leading-relaxed line-clamp-3">{article.excerpt}</p>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}
@@ -260,8 +260,9 @@ export default function HomePage() {
                   }}
                 >
                   {gallery.map((item, i) => (
-                    <div
+                    <Link
                       key={item.id}
+                      href={`/donations/${item.id}`}
                       className="flex-none w-[76%] snap-center group relative rounded-2xl overflow-hidden shadow-md
                         transition-all duration-300 cursor-pointer"
                       style={{ animationDelay: `${i * 80}ms` }}
@@ -277,7 +278,7 @@ export default function HomePage() {
                         <p className="font-bold text-sm leading-tight mb-1">{item.label}</p>
                         <p className="text-xs text-white/80 leading-snug line-clamp-2">{item.description}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
 
@@ -348,7 +349,7 @@ export default function HomePage() {
               {/* ── Desktop grid (hidden on mobile) ── */}
               <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 gap-6">
                 {gallery.map((item, i) => (
-                  <div key={item.id}
+                  <Link key={item.id} href={`/donations/${item.id}`}
                     className="group relative rounded-2xl overflow-hidden shadow-md
                       hover:shadow-2xl hover:-translate-y-2 transition-all duration-400 cursor-pointer animate-fade-in"
                     style={{ animationDelay: `${i * 80}ms` }}>
@@ -363,7 +364,7 @@ export default function HomePage() {
                       <p className="font-bold text-sm leading-tight mb-1">{item.label}</p>
                       <p className="text-xs text-white/80 leading-snug">{item.description}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </>
