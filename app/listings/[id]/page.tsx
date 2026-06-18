@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Lightbox from '@/components/Lightbox';
+import AuthGuard from '@/components/AuthGuard';
 
 const REASON_LABELS: Record<string, string> = {
   inappropriate: 'Inappropriate content',
@@ -261,6 +262,7 @@ export default function ListingDetailPage() {
   const whatsappNumber = phone.replace('+', '');
 
   return (
+    <AuthGuard>
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
       {/* Back */}
       <Link href="/listings" className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary mb-6 transition-colors">
@@ -591,5 +593,6 @@ export default function ListingDetailPage() {
         </div>
       )}
     </div>
+    </AuthGuard>
   );
 }

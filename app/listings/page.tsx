@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Listing, ListingCategory } from '@/lib/types';
 import ListingCard from '@/components/ListingCard';
 import Link from 'next/link';
+import AuthGuard from '@/components/AuthGuard';
 
 const ITEMS_PER_PAGE = 9;
 const CACHE_KEY = 'medcycle_listings_v1';
@@ -135,6 +136,7 @@ export default function ListingsPage() {
   });
 
   return (
+    <AuthGuard>
     <div>
       {/* ── Hero banner ────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden py-14">
@@ -390,5 +392,6 @@ export default function ListingsPage() {
         )}
       </section>
     </div>
+    </AuthGuard>
   );
 }
