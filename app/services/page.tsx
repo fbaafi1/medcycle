@@ -49,55 +49,6 @@ const SERVICES = [
       'Traceability from donor to recipient',
     ],
   },
-  {
-    id: 'compliance-reporting',
-    icon: '📊',
-    color: 'from-amber-500 to-orange-400',
-    title: 'Compliance & Reporting',
-    tagline: 'Data you can trust for audits and boards.',
-    desc: 'Generate regulatory-ready reports for NAFDAC compliance, NGO accountability, and hospital board presentations with a single click.',
-    features: [
-      'CSV and PDF export for all donation records',
-      'NAFDAC-aligned audit trail',
-      'Aggregate impact dashboards',
-      'Scheduled automated reporting',
-    ],
-  },
-  {
-    id: 'partner-integration',
-    icon: '🔗',
-    color: 'from-pink-500 to-rose-400',
-    title: 'Partner API Integration',
-    tagline: 'Connect your systems to ours.',
-    desc: 'Enterprise hospital information systems and pharmacy management software can integrate directly with MedCycle via our secure REST API.',
-    features: [
-      'REST API with OAuth 2.0 authentication',
-      'Webhook notifications for listing updates',
-      'Sandbox environment for testing',
-      'Dedicated integration support team',
-    ],
-  },
-  {
-    id: 'training',
-    icon: '🎓',
-    color: 'from-indigo-500 to-blue-400',
-    title: 'Training & Onboarding',
-    tagline: 'Get your team up and running fast.',
-    desc: 'We provide onboarding workshops, webinars, and self-paced e-learning modules to help your team make the most of the platform.',
-    features: [
-      'Live onboarding sessions for new organisations',
-      'Role-based training paths (admin, donor, recipient)',
-      'Video library and step-by-step guides',
-      'Ongoing quarterly refresher webinars',
-    ],
-  },
-];
-
-const FAQS = [
-  { q: 'Is MedCycle free to use?', a: 'Yes. Registering and listing donations is completely free for all healthcare organisations. We are supported by grants and NGO partnerships.' },
-  { q: 'How are listings verified for safety?', a: 'Our Medical Safety Officer and trained volunteers review every listing within 48 hours to confirm expiry dates, batch numbers, and regulatory compliance before approval.' },
-  { q: 'What regions do you currently cover?', a: 'We currently operate in 18 Nigerian states and are actively expanding. If your state is not yet covered, contact us — we may still be able to help.' },
-  { q: 'Can individuals donate medications?', a: 'Currently, MedCycle is open to registered healthcare organisations only. This ensures regulatory compliance and chain-of-custody integrity.' },
 ];
 
 export default function ServicesPage() {
@@ -183,7 +134,7 @@ export default function ServicesPage() {
               { n: '1', icon: '📝', title: 'Register', desc: 'Create an account for your organisation and submit verification documents.' },
               { n: '2', icon: '📋', title: 'List', desc: 'Post surplus medications or equipment with quantities, expiry dates, and photos.' },
               { n: '3', icon: '✅', title: 'Review', desc: 'Our safety team approves the listing within 48 hours.' },
-              { n: '4', icon: '🚀', title: 'Transfer', desc: 'Coordinate pick-up or delivery and track the donation to completion.' },
+              { n: '4', icon: '🤝', title: 'Connect', desc: 'Recipients contact donors directly via the platform to arrange pickup of the resource.' },
             ].map((step) => (
               <div key={step.n} className="text-center relative">
                 {/* Connector line */}
@@ -204,30 +155,6 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
-      <section className="py-20 bg-background">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="inline-block px-3 py-1 bg-secondary/10 text-secondary text-xs font-semibold
-              rounded-full uppercase tracking-wider mb-3">Got Questions?</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-text">Frequently Asked Questions</h2>
-          </div>
-
-          <div className="space-y-4">
-            {FAQS.map((faq, i) => (
-              <div key={i} className="bg-surface rounded-2xl border border-border p-7
-                hover:border-primary/30 hover:shadow-md transition-all duration-300">
-                <h3 className="font-bold text-text mb-3 flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full gradient-primary text-white text-xs
-                    flex items-center justify-center shrink-0 mt-0.5 font-bold">Q</span>
-                  {faq.q}
-                </h3>
-                <p className="text-text-secondary text-sm leading-relaxed pl-9">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── CTA ──────────────────────────────────────────────────────────── */}
       <section className="py-20 gradient-hero text-white">
