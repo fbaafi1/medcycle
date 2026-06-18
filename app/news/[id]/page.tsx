@@ -139,21 +139,24 @@ export default function NewsDetailPage() {
           {/* Divider */}
           <div className="h-px bg-border mb-7" />
 
-          {/* Excerpt / intro */}
-          <p className="text-base sm:text-lg text-text-secondary leading-relaxed mb-6 italic border-l-4 border-primary/30 pl-4">
-            {article.excerpt}
-          </p>
-
-          {/* Full body */}
+          {/* If body exists: show excerpt as intro quote + body as full text.
+              If no body: show excerpt as the full readable content. */}
           {article.body ? (
-            <div
-              className="prose prose-slate max-w-none text-text leading-relaxed space-y-4"
-              style={{ whiteSpace: 'pre-wrap' }}
-            >
-              {article.body}
-            </div>
+            <>
+              <p className="text-base sm:text-lg text-text-secondary leading-relaxed mb-6 italic border-l-4 border-primary/30 pl-4">
+                {article.excerpt}
+              </p>
+              <div
+                className="text-text leading-relaxed space-y-4"
+                style={{ whiteSpace: 'pre-wrap' }}
+              >
+                {article.body}
+              </div>
+            </>
           ) : (
-            <p className="text-text-secondary italic text-sm">Full article content coming soon.</p>
+            <p className="text-base text-text leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>
+              {article.excerpt}
+            </p>
           )}
         </div>
 

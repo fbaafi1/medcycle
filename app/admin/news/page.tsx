@@ -12,13 +12,14 @@ interface NewsArticle {
   tag: string;
   title: string;
   excerpt: string;
+  body: string | null;
   image_url: string | null;
   published: boolean;
   created_at: string;
 }
 
-const BLANK: { title:string;excerpt:string;tag:string;date:string;image_url:string|null;published:boolean } =
-  { title:'', excerpt:'', tag:'', date: new Date().toISOString().slice(0,10), image_url:null, published:true };
+const BLANK: { title:string;excerpt:string;body:string;tag:string;date:string;image_url:string|null;published:boolean } =
+  { title:'', excerpt:'', body:'', tag:'', date: new Date().toISOString().slice(0,10), image_url:null, published:true };
 
 export default function AdminNewsPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -47,7 +48,7 @@ export default function AdminNewsPage() {
   };
   const openEdit = (a: NewsArticle) => {
     setEditingId(a.id);
-    setForm({title:a.title,excerpt:a.excerpt,tag:a.tag,date:a.date,image_url:a.image_url,published:a.published});
+    setForm({title:a.title,excerpt:a.excerpt,body:a.body||'',tag:a.tag,date:a.date,image_url:a.image_url,published:a.published});
     setImageFile(null); setImagePreview(a.image_url); setError(''); setFormOpen(true);
   };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,9 +152,14 @@ export default function AdminNewsPage() {
                   className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Article headline"/>
               </div>
               <div>
-                <label className="block text-sm font-medium text-text mb-1">Excerpt *</label>
+                <label className="block text-sm font-medium text-text mb-1">Excerpt * <span className="text-text-secondary font-normal">(shown on homepage card)</span></label>
                 <textarea value={form.excerpt} onChange={e=>setForm(f=>({...f,excerpt:e.target.value}))} rows={3}
                   className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" placeholder="Short summary shown on homepage"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">Full Article Body <span className="text-text-secondary font-normal">(shown on article detail page)</span></label>
+                <textarea value={form.body} onChange={e=>setForm(f=>({...f,body:e.target.value}))} rows={8}
+                  className="w-full px-3.5 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="Write the full article content here. Leave blank to only show the excerpt."/>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
