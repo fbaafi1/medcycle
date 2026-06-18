@@ -147,7 +147,7 @@ export default function HomePage() {
             {[
               { step: '01', icon: '📋', title: 'Post a Listing', desc: 'Register your organisation and list surplus medications or equipment with expiry dates and quantities.' },
               { step: '02', icon: '🔍', title: 'Connect & Verify', desc: 'Our team verifies each listing for safety and compliance before it appears to recipient organisations.' },
-              { step: '03', icon: '🚀', title: 'Donate & Track', desc: "Coordinate pick-up or delivery directly through the platform and track your donation's impact in real time." },
+              { step: '03', icon: '🤝', title: 'Connect & Collect', desc: 'Approved listings go live for recipient organisations to view. They contact the donor directly to arrange collection, and the donor marks the item as taken once handed over.' },
             ].map((item) => (
               <div key={item.step} className="relative bg-surface rounded-2xl p-8 border border-border
                 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
