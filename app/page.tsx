@@ -55,6 +55,20 @@ export default function HomePage() {
       });
   }, []);
 
+  // When gallery loads with more than 2 items, scroll carousel to index 1
+  // so the 2nd card is centered with peeks visible on both sides.
+  useEffect(() => {
+    if (gallery.length <= 2) return;
+    // Wait for the DOM to paint the carousel before scrolling
+    requestAnimationFrame(() => {
+      const el = carouselRef.current;
+      if (!el) return;
+      const cardWidth = el.scrollWidth / gallery.length;
+      el.scrollTo({ left: cardWidth, behavior: 'instant' });
+      setActiveSlide(1);
+    });
+  }, [gallery]);
+
   return (
     <div className="overflow-x-hidden">
 
