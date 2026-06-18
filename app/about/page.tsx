@@ -1,33 +1,68 @@
-import type { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'About Us | The MedCycle',
-  description: 'Learn about The MedCycle\'s mission to reduce medical waste and improve healthcare access by connecting surplus medication donors with clinics in need.',
-};
+import { useState } from 'react';
 
-const TEAM = [
-  { name: 'Dr. Amina Okafor', role: 'Co-Founder & CEO', emoji: '👩‍⚕️', bio: 'Former consultant physician with 15 years of experience in public health policy across West Africa.' },
-  { name: 'Emeka Nwachukwu', role: 'Co-Founder & CTO', emoji: '👨‍💻', bio: 'Software engineer and health-tech advocate who built scalable systems for the Nigerian health ministry.' },
-  { name: 'Fatima Bello', role: 'Head of Operations', emoji: '👩‍💼', bio: 'Supply-chain specialist with deep expertise in last-mile healthcare delivery in underserved regions.' },
-  { name: 'Chidi Obi', role: 'Medical Safety Officer', emoji: '🔬', bio: 'Pharmacologist ensuring every donation meets strict safety and regulatory standards before distribution.' },
+
+
+const FAQS = [
+  {
+    q: 'Who can donate medications or medical supplies?',
+    a: 'Any registered hospital, pharmacy, clinic, or healthcare organisation operating in Ghana can sign up and list surplus, unexpired medications or medical equipment for donation.',
+  },
+  {
+    q: 'Is The MedCycle free to use?',
+    a: 'Yes — creating an account, browsing listings, and posting donations are completely free. Our goal is to make medical redistribution as accessible as possible.',
+  },
+  {
+    q: 'How are donated medications verified for safety?',
+    a: 'Every listing goes through a review process. Donors are required to confirm expiry dates, storage conditions, and quantity. Our team and platform guidelines enforce strict safety standards before redistribution.',
+  },
+  {
+    q: 'Who can receive donated items?',
+    a: 'Verified clinics, NGOs, community health centres, and government health facilities across Ghana can request and receive donated items listed on the platform.',
+  },
+  {
+    q: 'What types of items can be listed?',
+    a: 'Surplus prescription and over-the-counter medications, medical devices, consumables (gloves, syringes, PPE), and diagnostic equipment — all must be unexpired and in good condition.',
+  },
+  {
+    q: 'Where is The MedCycle currently available?',
+    a: 'We are currently operating in Ghana, based in the Ashanti Region (Oduom). We plan to expand across West Africa in the coming years.',
+  },
 ];
 
-const VALUES = [
-  { icon: '❤️', title: 'Compassion', desc: 'Every decision we make is guided by the impact it has on patients and communities in need.' },
-  { icon: '🔒', title: 'Safety', desc: 'Rigorous verification ensures that every medication and device distributed is safe and within expiry.' },
-  { icon: '🌍', title: 'Accessibility', desc: 'We believe quality healthcare resources should reach every corner of the country, regardless of wealth.' },
-  { icon: '🤝', title: 'Collaboration', desc: 'Hospitals, clinics, NGOs, and regulators work together on our platform to maximise collective impact.' },
-];
-
-const MILESTONES = [
-  { year: '2022', event: 'MedCycle founded with 5 pilot hospitals in Lagos.' },
-  { year: '2023', event: 'Expanded to 6 states; 10,000 medicine units redistributed.' },
-  { year: '2024', event: 'NGO partnership programme launched; first international collaboration.' },
-  { year: '2025', event: 'Platform redesigned; mobile app beta released to 500 users.' },
-  { year: '2026', event: '50,000 units redistributed; 18 states covered; 120 + partners.' },
-];
+function FAQItem({ q, a, index, isOpen, onToggle }: {
+  q: string; a: string; index: number; isOpen: boolean; onToggle: () => void;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border transition-all duration-300 overflow-hidden
+        ${isOpen ? 'border-primary/40 shadow-md' : 'border-border hover:border-primary/20'}`}
+    >
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
+        aria-expanded={isOpen}
+        id={`faq-btn-${index}`}
+      >
+        <span className="font-semibold text-text text-sm sm:text-base">{q}</span>
+        <span className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
+          ${isOpen ? 'bg-primary text-white rotate-45' : 'bg-surface text-text-secondary'}`}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </span>
+      </button>
+      <div className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+        <p className="px-6 pb-5 text-text-secondary text-sm leading-relaxed">{a}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function AboutPage() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
   return (
     <div className="overflow-x-hidden">
 
@@ -64,12 +99,12 @@ export default function AboutPage() {
                 Connecting Surplus to Need
               </h2>
               <p className="text-text-secondary leading-relaxed mb-5">
-                The MedCycle is a Nigerian health-tech platform that enables hospitals, pharmacies,
+                The MedCycle is a Ghanaian health-tech platform that enables hospitals, pharmacies,
                 and healthcare organisations to list and donate surplus medications, equipment, and
                 supplies to clinics, NGOs, and communities that are underserved.
               </p>
               <p className="text-text-secondary leading-relaxed">
-                Founded in 2022, we saw a systemic problem: well-resourced hospitals routinely
+                Founded in 2026, we identified a systemic problem: well-resourced hospitals routinely
                 discard valuable, unexpired medications while nearby clinics run critical shortages.
                 Our answer is a verified, transparent marketplace for medical redistribution.
               </p>
@@ -78,8 +113,8 @@ export default function AboutPage() {
             <div className="grid grid-cols-2 gap-5">
               {[
                 { icon: '🎯', title: 'Our Mission', desc: 'Reduce medical waste and improve healthcare access through technology-enabled resource sharing.' },
-                { icon: '🔭', title: 'Our Vision', desc: 'A Nigeria—and eventually an Africa—where no medication expires unused while a patient goes without.' },
-                { icon: '📍', title: 'Where We Work', desc: 'Currently active in 18 states, with plans to achieve nationwide coverage by the end of 2027.' },
+                { icon: '🔭', title: 'Our Vision', desc: 'A Ghana—and eventually an Africa—where no medication expires unused while a patient goes without.' },
+                { icon: '📍', title: 'Where We Work', desc: 'Currently operating in Ghana, with plans to expand across West Africa.' },
                 { icon: '👥', title: 'Who We Serve', desc: 'Hospitals, clinics, NGOs, community pharmacies, and government health facilities of all sizes.' },
               ].map((card) => (
                 <div key={card.title} className="bg-surface rounded-2xl p-6 border border-border
@@ -94,89 +129,95 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── Values ───────────────────────────────────────────────────────── */}
-      <section className="py-20 bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="inline-block px-3 py-1 bg-secondary/10 text-secondary text-xs font-semibold
-              rounded-full uppercase tracking-wider mb-3">What We Stand For</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-text">Our Core Values</h2>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {VALUES.map((v, i) => (
-              <div key={v.title}
-                className="text-center p-8 rounded-2xl bg-background border border-border
-                  hover:border-primary/30 hover:shadow-lg hover:-translate-y-1 transition-all duration-300
-                  animate-fade-in"
-                style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="text-5xl mb-4">{v.icon}</div>
-                <h3 className="font-bold text-text mb-3">{v.title}</h3>
-                <p className="text-text-secondary text-sm leading-relaxed">{v.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── Timeline ─────────────────────────────────────────────────────── */}
+      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
       <section className="py-20 bg-background">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold
-              rounded-full uppercase tracking-wider mb-3">Our Journey</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-text">Milestones</h2>
+              rounded-full uppercase tracking-wider mb-3">Got Questions?</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-text mb-4">Frequently Asked Questions</h2>
+            <p className="text-text-secondary text-base">
+              Everything you need to know about The MedCycle platform.
+            </p>
           </div>
 
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-secondary to-accent" />
-
-            <div className="space-y-8">
-              {MILESTONES.map((m, i) => (
-                <div key={m.year} className="flex items-start gap-6 animate-fade-in"
-                  style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="relative shrink-0 w-16 h-16 rounded-full gradient-primary
-                    flex items-center justify-center text-white font-extrabold text-xs
-                    shadow-lg ring-4 ring-background z-10">
-                    {m.year}
-                  </div>
-                  <div className="bg-surface rounded-xl border border-border p-5 flex-1
-                    hover:shadow-md transition-shadow">
-                    <p className="text-text text-sm leading-relaxed">{m.event}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => (
+              <FAQItem
+                key={i}
+                q={faq.q}
+                a={faq.a}
+                index={i}
+                isOpen={openIndex === i}
+                onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Team ─────────────────────────────────────────────────────────── */}
+      {/* ── Contact Us ───────────────────────────────────────────────────── */}
       <section className="py-20 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <span className="inline-block px-3 py-1 bg-secondary/10 text-secondary text-xs font-semibold
-              rounded-full uppercase tracking-wider mb-3">The People</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-text">Meet Our Team</h2>
+              rounded-full uppercase tracking-wider mb-3">Get In Touch</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-text mb-4">Contact Us</h2>
+            <p className="text-text-secondary text-base max-w-xl mx-auto">
+              Have a question, a partnership idea, or need support? We'd love to hear from you.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {TEAM.map((member, i) => (
-              <div key={member.name}
-                className="bg-background rounded-2xl border border-border overflow-hidden
-                  hover:shadow-xl hover:-translate-y-2 transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="h-36 gradient-hero flex items-center justify-center text-7xl">
-                  {member.emoji}
-                </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-text">{member.name}</h3>
-                  <p className="text-primary text-xs font-semibold mb-3">{member.role}</p>
-                  <p className="text-text-secondary text-xs leading-relaxed">{member.bio}</p>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+
+            {/* Phone */}
+            <a href="tel:+233501651008"
+              className="flex flex-col items-center text-center gap-4 p-8 bg-background rounded-2xl border border-border
+                hover:border-primary/40 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
+              <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-md">
+                <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
               </div>
-            ))}
+              <div>
+                <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mb-1">Phone</p>
+                <p className="font-bold text-text text-base group-hover:text-primary transition-colors">+233 501 651 008</p>
+              </div>
+            </a>
+
+            {/* Location */}
+            <div className="flex flex-col items-center text-center gap-4 p-8 bg-background rounded-2xl border border-border
+              hover:border-primary/40 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mb-1">Location</p>
+                <p className="font-bold text-text text-base">Oduom, Ashanti Region</p>
+                <p className="text-text-secondary text-sm">Ghana 🇬🇭</p>
+              </div>
+            </div>
+
+            {/* Hours */}
+            <div className="flex flex-col items-center text-center gap-4 p-8 bg-background rounded-2xl border border-border
+              hover:border-primary/40 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md">
+                <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mb-1">Available</p>
+                <p className="font-bold text-text text-base">Mon – Fri, 8am – 5pm</p>
+                <p className="text-text-secondary text-sm">Ghana Standard Time (GMT)</p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
