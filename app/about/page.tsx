@@ -36,7 +36,7 @@ function FAQItem({ q, a, index, isOpen, onToggle }: {
 }) {
   return (
     <div
-      className={`rounded-2xl border transition-all duration-300 overflow-hidden
+      className={`rounded-2xl border transition-all duration-300 overflow-hidden bg-white
         ${isOpen ? 'border-primary/40 shadow-md' : 'border-border hover:border-primary/20'}`}
     >
       <button
