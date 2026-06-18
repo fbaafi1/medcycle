@@ -90,6 +90,8 @@ export default function CreateListingPage() {
         category,
         image_url: imageUrl,
         status: 'available' as const,
+        // Admins' listings are auto-approved; regular users wait for review
+        is_approved: profile?.is_admin === true,
         generic_name: category === 'medication' ? genericName || null : null,
         trade_name: category === 'medication' ? tradeName || null : null,
         expiry_date: category === 'medication' ? expiryDate || null : null,
