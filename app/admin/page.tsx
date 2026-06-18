@@ -221,7 +221,33 @@ export default function AdminPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-text">Admin Panel</h1>
-        <p className="text-sm text-text-secondary mt-1">Manage all listings and users on The MedCycle.</p>
+        <p className="text-sm text-text-secondary mt-1">Manage all listings, users, and homepage content.</p>
+      </div>
+
+      {/* Content Management Quick Links */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <Link href="/admin/news"
+          className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-border hover:border-primary/30 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-2xl shrink-0">📰</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-text group-hover:text-primary transition-colors">News Articles</p>
+            <p className="text-xs text-text-secondary mt-0.5">Add, edit, or publish homepage news</p>
+          </div>
+          <svg className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        <Link href="/admin/gallery"
+          className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-border hover:border-secondary/30 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-2xl shrink-0">🖼️</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-text group-hover:text-secondary transition-colors">Donation Gallery</p>
+            <p className="text-xs text-text-secondary mt-0.5">Manage previous donation stories</p>
+          </div>
+          <svg className="w-4 h-4 text-text-secondary group-hover:text-secondary transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
 
       {/* Summary Stats */}

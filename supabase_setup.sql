@@ -297,3 +297,195 @@ SELECT cron.schedule(
   '0 0 * * *',
   'SELECT public.delete_expired_listings()'
 );
+
+
+-- ************************************************************
+-- 11. NEWS ARTICLES TABLE
+-- ************************************************************
+
+-- Drop policies first so script is safely re-runnable
+DROP POLICY IF EXISTS "news_select_published"    ON public.news_articles;
+DROP POLICY IF EXISTS "news_write_admin"          ON public.news_articles;
+DROP POLICY IF EXISTS "news_insert_admin"         ON public.news_articles;
+DROP POLICY IF EXISTS "news_update_admin"         ON public.news_articles;
+DROP POLICY IF EXISTS "news_delete_admin"         ON public.news_articles;
+DROP POLICY IF EXISTS "gallery_select_all"        ON public.donation_gallery;
+DROP POLICY IF EXISTS "gallery_write_admin"       ON public.donation_gallery;
+DROP POLICY IF EXISTS "gallery_insert_admin"      ON public.donation_gallery;
+DROP POLICY IF EXISTS "gallery_update_admin"      ON public.donation_gallery;
+DROP POLICY IF EXISTS "gallery_delete_admin"      ON public.donation_gallery;
+DROP POLICY IF EXISTS "content_images_select_all"    ON storage.objects;
+DROP POLICY IF EXISTS "content_images_insert_admin" ON storage.objects;
+DROP POLICY IF EXISTS "content_images_delete_admin" ON storage.objects;
+
+-- ************************************************************
+-- COLUMN MIGRATIONS (safe to re-run — uses IF NOT EXISTS / IF EXISTS)
+-- Adds image_url and removes old emoji/color/icon columns if they exist
+-- ************************************************************
+
+-- news_articles: add image_url, drop icon (old emoji column)
+ALTER TABLE public.news_articles
+  ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+ALTER TABLE public.news_articles
+  DROP COLUMN IF EXISTS icon;
+
+-- donation_gallery: add image_url, drop emoji + color (old columns)
+ALTER TABLE public.donation_gallery
+  ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+ALTER TABLE public.donation_gallery
+  DROP COLUMN IF EXISTS emoji;
+
+ALTER TABLE public.donation_gallery
+  DROP COLUMN IF EXISTS color;
+
+-- ************************************************************
+-- 11. NEWS ARTICLES TABLE
+-- ************************************************************
+
+CREATE TABLE IF NOT EXISTS public.news_articles (
+  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title      TEXT NOT NULL,
+  excerpt    TEXT NOT NULL DEFAULT '',
+  tag        TEXT NOT NULL DEFAULT '',
+  date       DATE NOT NULL,
+  image_url  TEXT,
+  published  BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for homepage query (published + date desc)
+CREATE INDEX IF NOT EXISTS idx_news_published_date
+  ON public.news_articles(published, date DESC);
+
+-- RLS
+ALTER TABLE public.news_articles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "news_select_published"
+  ON public.news_articles FOR SELECT
+  USING (published = true OR EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+  ));
+
+CREATE POLICY "news_insert_admin"
+  ON public.news_articles FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+CREATE POLICY "news_update_admin"
+  ON public.news_articles FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+CREATE POLICY "news_delete_admin"
+  ON public.news_articles FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+
+-- ************************************************************
+-- 12. DONATION GALLERY TABLE
+-- ************************************************************
+
+CREATE TABLE IF NOT EXISTS public.donation_gallery (
+  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  label       TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  image_url   TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS
+ALTER TABLE public.donation_gallery ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "gallery_select_all"
+  ON public.donation_gallery FOR SELECT
+  USING (true);
+
+CREATE POLICY "gallery_insert_admin"
+  ON public.donation_gallery FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+CREATE POLICY "gallery_update_admin"
+  ON public.donation_gallery FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+CREATE POLICY "gallery_delete_admin"
+  ON public.donation_gallery FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+
+-- ************************************************************
+-- 13. CONTENT-IMAGES STORAGE BUCKET (news + gallery photos)
+-- ************************************************************
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('content-images', 'content-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "content_images_select_all"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'content-images');
+
+CREATE POLICY "content_images_insert_admin"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'content-images'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
+
+CREATE POLICY "content_images_delete_admin"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'content-images'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true
+    )
+  );
