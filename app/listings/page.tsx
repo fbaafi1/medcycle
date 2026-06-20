@@ -3,23 +3,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Listing, ListingCategory } from '@/lib/types';
+import { readCache, writeCache, isCacheFresh, FETCH_TIMEOUT_MS } from '@/lib/cache';
+import { withRetry } from '@/lib/retry';
 import ListingCard from '@/components/ListingCard';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 
 const ITEMS_PER_PAGE = 9;
 const CACHE_KEY = 'medcycle_listings_v1';
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-const FETCH_TIMEOUT_MS = 10_000;
-
-function isHardReload(): boolean {
-  try {
-    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-    return nav?.type === 'reload';
-  } catch {
-    return false;
-  }
-}
 
 const CATEGORY_META: Record<string, { label: string; emoji: string; color: string }> = {
   all:        { label: 'All',         emoji: '🏥', color: 'from-primary to-primary-light' },
@@ -49,44 +40,39 @@ export default function ListingsPage() {
   const fetchListings = async () => {
     setError(false);
 
-    if (isHardReload()) {
-      try { sessionStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
-    }
+    const cached = readCache<Listing[]>(CACHE_KEY);
+    const hasCachedData = Boolean(cached?.data?.length);
 
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { data: cachedData, timestamp } = JSON.parse(cached);
-        if (cachedData?.length) {
-          setListings(cachedData);
-          setLoading(false);
-          if (Date.now() - timestamp < CACHE_TTL) return;
-        }
-      }
-    } catch { /* continue to network */ }
+    if (hasCachedData) {
+      setListings(cached!.data);
+      setLoading(false);
+      if (isCacheFresh(cached!.timestamp)) return;
+    } else {
+      setLoading(true);
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*, profiles!listings_user_id_profiles_fkey(*)')
-        .eq('is_approved', true)
-        .abortSignal(controller.signal);
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*, profiles!listings_user_id_profiles_fkey(*)')
+          .eq('is_approved', true)
+          .abortSignal(controller.signal);
+        if (error) throw error;
+        return data ?? [];
+      });
 
       clearTimeout(timeoutId);
-      if (error) throw error;
-      const shuffled = (data || []).sort(() => Math.random() - 0.5);
+      const shuffled = data.sort(() => Math.random() - 0.5);
       setListings(shuffled);
-
-      try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: shuffled, timestamp: Date.now() }));
-      } catch { /* storage full */ }
+      writeCache(CACHE_KEY, shuffled);
     } catch (err) {
       clearTimeout(timeoutId);
       console.error('Failed to fetch listings:', err);
-      if (listings.length === 0) setError(true);
+      if (!hasCachedData) setError(true);
     } finally {
       setLoading(false);
     }

@@ -14,8 +14,12 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
-  // HTTP cache headers — cuts repeated-reload latency dramatically
+  // HTTP cache headers — production only (custom Cache-Control breaks Next.js dev HMR)
   async headers() {
+    if (process.env.NODE_ENV !== 'production') {
+      return [];
+    }
+
     return [
       // Static assets: cache for 1 year in the browser + CDN
       {

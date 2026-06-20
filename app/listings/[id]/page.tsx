@@ -8,6 +8,9 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Lightbox from '@/components/Lightbox';
 import AuthGuard from '@/components/AuthGuard';
+import FetchError from '@/components/FetchError';
+import { readCache, writeCache, isCacheFresh, FETCH_TIMEOUT_MS } from '@/lib/cache';
+import { withRetry } from '@/lib/retry';
 
 const REASON_LABELS: Record<string, string> = {
   inappropriate: 'Inappropriate content',
@@ -56,17 +59,6 @@ function getExpiryInfo(expiryDate: string | null): {
 
 const LISTING_CACHE_PREFIX = 'medcycle_listing_';
 const HOME_CACHE_KEY = 'medcycle_listings_v1';
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-const FETCH_TIMEOUT_MS = 10_000;
-
-function isHardReload(): boolean {
-  try {
-    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-    return nav?.type === 'reload';
-  } catch {
-    return false;
-  }
-}
 
 export default function ListingDetailPage() {
   const { id } = useParams();
@@ -87,68 +79,52 @@ export default function ListingDetailPage() {
     const fetchListing = async () => {
       setFetchError(false);
       const cacheKey = `${LISTING_CACHE_PREFIX}${id}`;
+      let hasCachedData = false;
 
-      // Clear cache on hard reload so mobile gets fresh data
-      if (isHardReload()) {
-        try {
-          sessionStorage.removeItem(cacheKey);
-          sessionStorage.removeItem(HOME_CACHE_KEY);
-        } catch { /* ignore */ }
+      const cached = readCache<Listing>(cacheKey);
+      if (cached?.data) {
+        hasCachedData = true;
+        setListing(cached.data);
+        setLoading(false);
+        if (isCacheFresh(cached.timestamp)) return;
       }
 
-      // 1. Try per-listing cache first
-      try {
-        const cached = sessionStorage.getItem(cacheKey);
-        if (cached) {
-          const { data: cachedData, timestamp } = JSON.parse(cached);
-          if (cachedData) {
-            setListing(cachedData);
-            setLoading(false);
-            if (Date.now() - timestamp < CACHE_TTL) return;
-          }
+      const homeCache = readCache<Listing[]>(HOME_CACHE_KEY);
+      if (!hasCachedData && homeCache?.data) {
+        const found = homeCache.data.find((l) => l.id === id);
+        if (found) {
+          hasCachedData = true;
+          setListing(found);
+          setLoading(false);
+          if (isCacheFresh(homeCache.timestamp)) return;
         }
-      } catch {}
+      }
 
-      // 2. Fall back to homepage listings cache
-      try {
-        const homeCache = sessionStorage.getItem(HOME_CACHE_KEY);
-        if (homeCache) {
-          const { data: allListings, timestamp } = JSON.parse(homeCache);
-          const found = allListings?.find((l: Listing) => l.id === id);
-          if (found) {
-            setListing(found);
-            setLoading(false);
-            if (Date.now() - timestamp < CACHE_TTL) return;
-          }
-        }
-      } catch {}
+      if (!hasCachedData) setLoading(true);
 
-      // 3. Fetch from Supabase with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
       try {
-        const { data } = await supabase
-          .from('listings')
-          .select('*, profiles!listings_user_id_profiles_fkey(*)')
-          .eq('id', id)
-          .abortSignal(controller.signal)
-          .single();
+        const data = await withRetry(async () => {
+          const { data, error } = await supabase
+            .from('listings')
+            .select('*, profiles!listings_user_id_profiles_fkey(*)')
+            .eq('id', id)
+            .abortSignal(controller.signal)
+            .single();
+          if (error) throw error;
+          return data;
+        });
 
         clearTimeout(timeoutId);
         setListing(data);
-        setLoading(false);
-
-        // 4. Save to per-listing cache
-        if (data) {
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
-          } catch {}
-        }
+        if (data) writeCache(cacheKey, data);
       } catch (err) {
         clearTimeout(timeoutId);
         console.error('Failed to fetch listing:', err);
-        if (!listing) setFetchError(true);
+        if (!hasCachedData) setFetchError(true);
+      } finally {
         setLoading(false);
       }
     };

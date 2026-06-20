@@ -40,17 +40,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const getSession = async () => {
+    let mounted = true;
+
+    const initAuth = async () => {
+      // Fast path: read local session without a network round-trip
       const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (!mounted) return;
+
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        setSession(session);
+        setUser(session.user);
+        setLoading(false);
+        fetchProfile(session.user.id);
+
+        // Validate session in the background — don't block page content
+        supabase.auth.getUser().then(({ data: { user }, error }) => {
+          if (!mounted) return;
+          if (error) {
+            supabase.auth.signOut({ scope: 'local' });
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+          } else if (user) {
+            setUser(user);
+          }
+        });
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    getSession();
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -65,7 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string) => {
