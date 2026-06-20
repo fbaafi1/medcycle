@@ -5,6 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Listing, ListingCategory, EquipmentCondition } from '@/lib/types';
 import { useRouter, useParams } from 'next/navigation';
+import FetchError from '@/components/FetchError';
+import { FETCH_TIMEOUT_MS } from '@/lib/cache';
+import { withRetry } from '@/lib/retry';
 
 export default function EditListingPage() {
   const { user, loading: authLoading } = useAuth();
@@ -25,18 +28,28 @@ export default function EditListingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login');
-      return;
-    }
-    const fetchListing = async () => {
-      const { data } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('id', id)
-        .single();
+  const doFetch = async () => {
+    setFetchError(false);
+    setPageLoading(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('id', id)
+          .abortSignal(controller.signal)
+          .single();
+        if (error) throw error;
+        return data;
+      });
+
+      clearTimeout(timeoutId);
 
       if (!data || (user && data.user_id !== user.id)) {
         router.push('/my-listings');
@@ -53,10 +66,21 @@ export default function EditListingPage() {
       setExpiryDate(data.expiry_date || '');
       setCondition(data.condition || 'new');
       setQuantity(data.quantity?.toString() || '');
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('Failed to fetch listing for edit:', err);
+      setFetchError(true);
+    } finally {
       setPageLoading(false);
-    };
+    }
+  };
 
-    if (user && id) fetchListing();
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (user && id) doFetch();
   }, [authLoading, user, id, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,6 +147,18 @@ export default function EditListingPage() {
           <div className="h-8 bg-border/30 rounded w-1/3" />
           <div className="h-96 bg-border/30 rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20">
+        <FetchError
+          title="Connection error"
+          message="Unable to load this listing. Check your internet connection."
+          onRetry={doFetch}
+        />
       </div>
     );
   }

@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import FetchError from '@/components/FetchError';
+import { readCache, writeCache, isCacheFresh, FETCH_TIMEOUT_MS } from '@/lib/cache';
+import { withRetry } from '@/lib/retry';
 
 interface NewsArticle {
   id: string;
@@ -17,27 +20,68 @@ interface NewsArticle {
   created_at: string;
 }
 
+const NEWS_CACHE_PREFIX = 'medcycle_news_';
+const NEWS_LIST_CACHE_KEY = 'medcycle_news_v1';
+
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [related, setRelated] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
 
-    supabase
-      .from('news_articles')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setNotFound(true);
-        } else {
-          setArticle(data);
-          // Load related articles (same tag, exclude this one)
+    const fetchArticle = async () => {
+      setFetchError(false);
+      const cacheKey = `${NEWS_CACHE_PREFIX}${id}`;
+      let hasCachedData = false;
+
+      // 1. Try item-level cache
+      const cached = readCache<NewsArticle>(cacheKey);
+      if (cached?.data) {
+        hasCachedData = true;
+        setArticle(cached.data);
+        setLoading(false);
+        if (isCacheFresh(cached.timestamp)) return;
+      }
+
+      // 2. Try list-level cache as fallback
+      const listCache = readCache<NewsArticle[]>(NEWS_LIST_CACHE_KEY);
+      if (!hasCachedData && listCache?.data) {
+        const found = listCache.data.find((n) => n.id === id);
+        if (found) {
+          hasCachedData = true;
+          setArticle(found);
+          setLoading(false);
+          if (isCacheFresh(listCache.timestamp)) return;
+        }
+      }
+
+      if (!hasCachedData) setLoading(true);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      try {
+        const data = await withRetry(async () => {
+          const { data, error } = await supabase
+            .from('news_articles')
+            .select('*')
+            .eq('id', id)
+            .abortSignal(controller.signal)
+            .single();
+          if (error) throw error;
+          return data;
+        });
+
+        clearTimeout(timeoutId);
+        setArticle(data);
+        if (data) {
+          writeCache(cacheKey, data);
+          // Load related articles (best-effort, no retry needed)
           supabase
             .from('news_articles')
             .select('*')
@@ -47,8 +91,21 @@ export default function NewsDetailPage() {
             .limit(3)
             .then(({ data: rel }) => setRelated(rel || []));
         }
+      } catch (err: unknown) {
+        clearTimeout(timeoutId);
+        console.error('Failed to fetch article:', err);
+        if (!hasCachedData) {
+          const isNotFound =
+            err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'PGRST116';
+          if (isNotFound) setNotFound(true);
+          else setFetchError(true);
+        }
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchArticle();
   }, [id]);
 
   /* ── Loading ── */
@@ -66,6 +123,20 @@ export default function NewsDetailPage() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  /* ── Network error ── */
+  if (fetchError) {
+    return (
+      <FetchError
+        title="Connection error"
+        message="Unable to load this article. Check your internet connection."
+        onRetry={() => {
+          setFetchError(false);
+          setLoading(true);
+        }}
+      />
     );
   }
 

@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import FetchError from '@/components/FetchError';
+import { readCache, writeCache, isCacheFresh, FETCH_TIMEOUT_MS } from '@/lib/cache';
+import { withRetry } from '@/lib/retry';
 
 interface GalleryItem {
   id: string;
@@ -17,37 +20,90 @@ interface GalleryItem {
   category?: string | null;
 }
 
+const DONATION_CACHE_PREFIX = 'medcycle_donation_';
+const DONATIONS_LIST_CACHE_KEY = 'medcycle_donations_v1';
+
 export default function DonationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [item, setItem] = useState<GalleryItem | null>(null);
   const [related, setRelated] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
 
-    supabase
-      .from('donation_gallery')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setNotFound(true);
-        } else {
-          setItem(data);
-          // Load other recent donations
-          supabase
+    const fetchDonation = async () => {
+      setFetchError(false);
+      const cacheKey = `${DONATION_CACHE_PREFIX}${id}`;
+      let hasCachedData = false;
+
+      // 1. Try item-level cache
+      const cached = readCache<GalleryItem>(cacheKey);
+      if (cached?.data) {
+        hasCachedData = true;
+        setItem(cached.data);
+        setLoading(false);
+        if (isCacheFresh(cached.timestamp)) return;
+      }
+
+      // 2. Try list-level cache as fallback
+      const listCache = readCache<GalleryItem[]>(DONATIONS_LIST_CACHE_KEY);
+      if (!hasCachedData && listCache?.data) {
+        const found = listCache.data.find((g) => g.id === id);
+        if (found) {
+          hasCachedData = true;
+          setItem(found);
+          setLoading(false);
+          if (isCacheFresh(listCache.timestamp)) return;
+        }
+      }
+
+      if (!hasCachedData) setLoading(true);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      try {
+        const data = await withRetry(async () => {
+          const { data, error } = await supabase
             .from('donation_gallery')
             .select('*')
-            .neq('id', id)
-            .order('created_at', { ascending: false })
-            .limit(3)
-            .then(({ data: rel }) => setRelated(rel || []));
+            .eq('id', id)
+            .abortSignal(controller.signal)
+            .single();
+          if (error) throw error;
+          return data;
+        });
+
+        clearTimeout(timeoutId);
+        setItem(data);
+        if (data) writeCache(cacheKey, data);
+
+        // Load related (best-effort, no retry needed)
+        supabase
+          .from('donation_gallery')
+          .select('*')
+          .neq('id', id)
+          .order('created_at', { ascending: false })
+          .limit(3)
+          .then(({ data: rel }) => setRelated(rel || []));
+      } catch (err: unknown) {
+        clearTimeout(timeoutId);
+        console.error('Failed to fetch donation:', err);
+        if (!hasCachedData) {
+          const isNotFound =
+            err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'PGRST116';
+          if (isNotFound) setNotFound(true);
+          else setFetchError(true);
         }
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchDonation();
   }, [id]);
 
   /* ── Loading ── */
@@ -64,6 +120,20 @@ export default function DonationDetailPage() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  /* ── Network error ── */
+  if (fetchError) {
+    return (
+      <FetchError
+        title="Connection error"
+        message="Unable to load this donation story. Check your internet connection."
+        onRetry={() => {
+          setFetchError(false);
+          setLoading(true);
+        }}
+      />
     );
   }
 

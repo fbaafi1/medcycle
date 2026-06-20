@@ -7,12 +7,16 @@ import { Listing } from '@/lib/types';
 import ListingCard from '@/components/ListingCard';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import FetchError from '@/components/FetchError';
+import { FETCH_TIMEOUT_MS } from '@/lib/cache';
+import { withRetry } from '@/lib/retry';
 
 export default function MyListingsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -25,16 +29,47 @@ export default function MyListingsPage() {
   }, [authLoading, user, router]);
 
   const fetchMyListings = async () => {
-    const { data } = await supabase
-      .from('listings')
-      .select('*, profiles!listings_user_id_profiles_fkey(*)')
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false });
-    setListings(data || []);
-    setLoading(false);
+    setLoading(true);
+    setFetchError(false);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*, profiles!listings_user_id_profiles_fkey(*)')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false })
+          .abortSignal(controller.signal);
+        if (error) throw error;
+        return data;
+      });
+      clearTimeout(timeoutId);
+      setListings(data || []);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('Failed to fetch my listings:', err);
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (authLoading) return null;
+
+  if (fetchError) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <FetchError
+          title="Connection error"
+          message="Unable to load your listings. Check your internet connection."
+          onRetry={fetchMyListings}
+        />
+      </div>
+    );
+  }
 
   const pendingCount = listings.filter(l => !l.is_approved).length;
 
